@@ -3,6 +3,27 @@
 
 @source '../../../../packages/ui/src';
 
+/* Unovis chart chrome mapped onto the design system. Scoped on the chart
+   figure (not :root) so these win over the library's runtime-injected :root
+   defaults — for custom properties the nearest ancestor definition wins. */
+.vis-chart {
+  --vis-axis-font-family: inherit;
+  --vis-axis-tick-label-color: var(--muted-foreground);
+  --vis-axis-tick-label-font-size: 11px;
+  --vis-axis-grid-color: var(--border);
+  --vis-legend-font-family: inherit;
+  --vis-legend-label-color: var(--muted-foreground);
+  --vis-legend-label-font-size: 11px;
+  --vis-crosshair-line-stroke-color: var(--muted-foreground);
+  --vis-crosshair-circle-stroke-color: var(--background);
+  --vis-tooltip-background-color: var(--popover);
+  --vis-tooltip-border-color: var(--border);
+  --vis-tooltip-text-color: var(--popover-foreground);
+  --vis-tooltip-padding: 8px 12px;
+  --vis-tooltip-border-radius: 8px;
+  --vis-tooltip-box-shadow: 0 4px 16px oklch(0 0 0 / 0.12);
+}
+
 /* Self-hosted Geist (OFL) — no third-party font CDN: the app must work offline
    and make zero external requests beyond its own origin. */
 @font-face {
