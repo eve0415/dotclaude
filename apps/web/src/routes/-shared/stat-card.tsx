@@ -9,7 +9,7 @@ interface StatCardProps {
 }
 
 export const StatCard = ({ label, value, detail }: StatCardProps) => (
-  <Card>
+  <Card className='h-full'>
     <CardHeader className='pb-1'>
       <CardTitle className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>{label}</CardTitle>
     </CardHeader>

@@ -51,7 +51,7 @@ const Overview = () => {
   return (
     <div className='flex flex-col gap-6'>
       <h1 className='sr-only'>Overview</h1>
-      <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
         <StatCard label='Sessions' value={index.sessionCount} detail={`${index.projects.length} projects · ${formatBytes(index.totalSessionBytes)}`} />
         <StatCard
           label='Output tokens'

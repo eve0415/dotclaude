@@ -46,7 +46,7 @@ const Collapsible = ({ summary, children, defaultOpen = false }: { summary: Reac
   );
 };
 
-const TruncatedPre = ({ text, label }: { text: string; label: string }) => {
+const TruncatedPre = ({ text, label, flat = false }: { text: string; label: string; flat?: boolean }) => {
   const [showAll, setShowAll] = useState(false);
   const expand = useCallback(() => {
     setShowAll(true);
@@ -56,7 +56,9 @@ const TruncatedPre = ({ text, label }: { text: string; label: string }) => {
   const visible = truncated ? lines.slice(0, COLLAPSED_RESULT_LINES).join('\n') : text;
   return (
     <div>
-      <pre className='bg-muted/60 max-h-[32rem] overflow-auto rounded-md p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap'>{visible}</pre>
+      <pre className={cn('max-h-[32rem] overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap', flat ? 'p-0' : 'bg-muted/60 rounded-md p-3')}>
+        {visible}
+      </pre>
       {truncated ? (
         <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
           Show all {lines.length} lines of {label}
@@ -102,12 +104,14 @@ const ToolRowView = ({
             </Button>
           )}
         </div>
-        <div className='flex flex-col gap-2 p-3'>
-          <TruncatedPre text={formatInput(row.input)} label='input' />
+        <div className='flex flex-col gap-3 p-3'>
+          <TruncatedPre flat text={formatInput(row.input)} label='input' />
           {row.result === undefined || row.result === '' ? null : (
-            <Collapsible summary={<span>result · {row.result.split('\n').length} lines</span>}>
-              <TruncatedPre text={row.result} label='result' />
-            </Collapsible>
+            <div className='border-border/60 border-t pt-2'>
+              <Collapsible summary={<span>result · {row.result.split('\n').length} lines</span>}>
+                <TruncatedPre flat text={row.result} label='result' />
+              </Collapsible>
+            </div>
           )}
         </div>
       </div>

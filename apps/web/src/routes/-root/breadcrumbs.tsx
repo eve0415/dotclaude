@@ -1,3 +1,4 @@
+import { decodeProjectDirName, projectLabel } from '@dotclaude/schemas/project';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@dotclaude/ui/components/breadcrumb';
 import { Link, useLocation } from '@tanstack/react-router';
 import { Fragment } from 'react';
@@ -14,9 +15,10 @@ const crumbsFor = (pathname: string): Crumb[] => {
   if (nav !== undefined) {
     if (pathname === nav.to) return [{ label: nav.label, to: undefined }];
     const rest = decodeURIComponent(pathname.slice(nav.to.length + 1));
+    const label = nav.to === '/projects' ? projectLabel(decodeProjectDirName(rest)) : rest;
     return [
       { label: nav.label, to: nav.to },
-      { label: rest, to: undefined },
+      { label, to: undefined },
     ];
   }
   if (pathname.startsWith('/sessions/')) {

@@ -43,7 +43,7 @@ const ProjectMemories = ({ project }: { project: ProjectRef }) => {
               <div className='mt-3 flex flex-wrap gap-1.5'>
                 {memory.links.map(link => (
                   <Badge key={link} variant='outline' className='font-mono text-[10px]'>
-                    [[{link}]]
+                    {link}
                   </Badge>
                 ))}
               </div>
