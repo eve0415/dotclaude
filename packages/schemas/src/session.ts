@@ -72,8 +72,10 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
   let version: string | undefined;
   const models = new Set<string>();
   let usage = emptyUsageTotals();
-  const usageByModel: Record<string, UsageTotals> = {};
-  const toolCounts: Record<string, number> = {};
+  // Map, not object: model names and tool names come straight from the transcript,
+  // so keys like "__proto__" must stay plain data instead of touching the prototype.
+  const usageByModel = new Map<string, UsageTotals>();
+  const toolCounts = new Map<string, number>();
   let userMessageCount = 0;
   let assistantMessageCount = 0;
 
@@ -98,12 +100,12 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
         const totals = usageToTotals(record.message.usage);
         usage = addUsageTotals(usage, totals);
         if (model !== undefined) {
-          usageByModel[model] = addUsageTotals(usageByModel[model] ?? emptyUsageTotals(), totals);
+          usageByModel.set(model, addUsageTotals(usageByModel.get(model) ?? emptyUsageTotals(), totals));
         }
       }
       for (const block of record.message.content) {
         if (block.type === 'tool_use' && 'name' in block && typeof block.name === 'string') {
-          toolCounts[block.name] = (toolCounts[block.name] ?? 0) + 1;
+          toolCounts.set(block.name, (toolCounts.get(block.name) ?? 0) + 1);
         }
       }
     }
@@ -120,8 +122,9 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
     durationMs,
     models: [...models],
     usage,
-    usageByModel,
-    toolCounts,
+    // fromEntries defines own data properties, so hostile keys survive as plain entries.
+    usageByModel: Object.fromEntries(usageByModel),
+    toolCounts: Object.fromEntries(toolCounts),
     userMessageCount,
     assistantMessageCount,
     gitBranch,

@@ -81,20 +81,24 @@ const EXTENSION_LANG: Record<string, HighlightLang> = {
   shell: 'shellscript',
 };
 
+// Own-property lookups: extensions and fence infos come from transcripts, so keys
+// like "constructor" or "toString" must miss instead of hitting the prototype chain.
+const langForExtension = (ext: string): HighlightLang | undefined => (Object.hasOwn(EXTENSION_LANG, ext) ? EXTENSION_LANG[ext] : undefined);
+
 /** Pick a highlight language from a file path; undefined means render plain. */
 export const langFromPath = (filePath: string): HighlightLang | undefined => {
   const name = filePath.split('/').at(-1) ?? '';
   const ext = name.includes('.') ? (name.split('.').at(-1)?.toLowerCase() ?? '') : '';
-  return EXTENSION_LANG[ext];
+  return langForExtension(ext);
 };
 
-const isHighlightLang = (value: string): value is HighlightLang => value in LANG_LOADERS;
+const isHighlightLang = (value: string): value is HighlightLang => Object.hasOwn(LANG_LOADERS, value);
 
 /** Resolve a markdown fence info string (```ts, ```bash …) to a language. */
 export const langFromAlias = (alias: string): HighlightLang | undefined => {
   const lower = alias.toLowerCase();
   if (isHighlightLang(lower)) return lower;
-  return EXTENSION_LANG[lower];
+  return langForExtension(lower);
 };
 
 /** Above these sizes highlighting costs more than it helps — render plain. */
