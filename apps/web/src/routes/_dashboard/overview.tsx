@@ -8,6 +8,7 @@ import { useDataSource } from '#lib/data/data-source';
 import { formatBytes, formatDateTime, formatTokens, formatUsd } from '#lib/format';
 
 import { SessionLink } from '../-shared/entity-links';
+import { GithubLink, GithubMark } from '../-shared/github-link';
 import { MeterBar } from '../-shared/meter-bar';
 import { ModelBadge } from '../-shared/model-badge';
 import { StatCard } from '../-shared/stat-card';
@@ -102,6 +103,14 @@ const Overview = () => {
           </CardContent>
         </Card>
       </div>
+
+      <p className='text-muted-foreground text-center text-xs'>
+        dotclaude is open source —{' '}
+        <GithubLink className='hover:text-foreground align-middle underline-offset-4 transition-colors hover:underline'>
+          <GithubMark className='size-3.5' />
+          eve0415/dotclaude
+        </GithubLink>
+      </p>
     </div>
   );
 };

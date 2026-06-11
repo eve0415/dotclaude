@@ -9,6 +9,8 @@ import { cn } from '@dotclaude/ui/lib/utils';
 import { FileJson2, FolderOpen, HardDriveDownload, History, ShieldCheck, WifiOff } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
+import { GithubLink, GithubMark } from '../-shared/github-link';
+
 type DataSourceValue = ReturnType<typeof useDataSource>;
 
 interface OnboardingScreenProps {
@@ -182,9 +184,12 @@ export const OnboardingScreen = ({ dataSource, error, runOpen }: OnboardingScree
         )}
 
         <p className='text-muted-foreground mt-10 text-center text-xs'>
-          <Badge variant='outline' className='mr-2'>
-            open source
-          </Badge>
+          <GithubLink className='mr-2 align-middle'>
+            <Badge variant='outline' className='hover:border-primary/50 hover:text-foreground gap-1.5 transition-colors'>
+              <GithubMark className='size-3' />
+              open source
+            </Badge>
+          </GithubLink>
           Server-side rendering only serves this page shell — auditable, self-hostable, zero telemetry.
         </p>
       </div>
