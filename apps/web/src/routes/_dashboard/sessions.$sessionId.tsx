@@ -12,6 +12,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
 import { useDataSource } from '#lib/data/data-source';
+import { MISSING_FILE_ENTRY } from '#lib/data/file-entry';
 import { agentMetaQuery, sessionRecordsQuery } from '#lib/data/queries';
 import { formatDateTime, formatDuration, formatTokens, formatUsd } from '#lib/format';
 
@@ -33,8 +34,6 @@ interface RowFilters {
 
 const EMPTY_AGENT_MAP: ReadonlyMap<string, string> = new Map();
 
-const missingEntry = { path: '', name: '', size: 0, lastModified: 0, getFile: () => Promise.reject(new Error('missing entry')) };
-
 const findSession = (index: ClaudeIndex | undefined, sessionId: string) => {
   let found: { project: ClaudeIndex['projects'][number]; session: SessionFileRef } | undefined;
   for (const project of index?.projects ?? []) {
@@ -49,8 +48,8 @@ const findSession = (index: ClaudeIndex | undefined, sessionId: string) => {
 
 const AgentDrawer = ({ session, agentId, onClose }: { session: SessionFileRef; agentId: string; onClose: () => void }) => {
   const agent = session.agents.find(a => a.agentId === agentId);
-  const records = useQuery({ ...sessionRecordsQuery(agent?.entry ?? missingEntry), enabled: agent !== undefined });
-  const meta = useQuery({ ...agentMetaQuery(agent?.metaEntry ?? missingEntry), enabled: agent?.metaEntry !== undefined });
+  const records = useQuery({ ...sessionRecordsQuery(agent?.entry ?? MISSING_FILE_ENTRY), enabled: agent !== undefined });
+  const meta = useQuery({ ...agentMetaQuery(agent?.metaEntry ?? MISSING_FILE_ENTRY), enabled: agent?.metaEntry !== undefined });
   const rows = useMemo(() => buildRows(records.data ?? []), [records.data]);
 
   const onOpenChange = useCallback(
@@ -105,21 +104,21 @@ const SessionDetail = () => {
   const [filters, setFilters] = useState<RowFilters>({ thinking: true, tools: true, meta: false });
 
   const found = findSession(index, sessionId);
-  const records = useQuery({ ...sessionRecordsQuery(found?.session.entry ?? missingEntry), enabled: found !== undefined });
+  const records = useQuery({ ...sessionRecordsQuery(found?.session.entry ?? MISSING_FILE_ENTRY), enabled: found !== undefined });
   const agentsByToolUse = useAgentMap(found?.session.agents ?? []);
   const summary = useMemo(() => (records.data === undefined ? undefined : summarizeSession(records.data)), [records.data]);
 
+  const allRows = useMemo(() => buildRows(records.data ?? []), [records.data]);
   const rows = useMemo(() => {
-    const all = buildRows(records.data ?? []);
     const needle = search.trim().toLowerCase();
-    return all.filter(row => {
+    return allRows.filter(row => {
       if (row.kind === 'thinking' && !filters.thinking) return false;
       if (row.kind === 'tool' && !filters.tools) return false;
       if (row.kind === 'meta' && !filters.meta) return false;
       if (needle !== '' && !rowMatches(row, needle)) return false;
       return true;
     });
-  }, [records.data, search, filters]);
+  }, [allRows, search, filters]);
 
   const onSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);

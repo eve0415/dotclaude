@@ -69,9 +69,11 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
   }, [adopt, persistedHandle]);
 
   const refresh = useCallback(async () => {
-    if (source?.kind === 'directory-handle') {
-      setSource(await relistDirectoryHandle(source.handle));
-    }
+    if (source?.kind !== 'directory-handle') return;
+    const relisted = await relistDirectoryHandle(source.handle);
+    // The user may have opened a different source while the walk ran — only
+    // apply the relisting if it still belongs to the current handle.
+    setSource(current => (current?.kind === 'directory-handle' && current.handle === source.handle ? relisted : current));
   }, [source]);
 
   const close = useCallback(async () => {

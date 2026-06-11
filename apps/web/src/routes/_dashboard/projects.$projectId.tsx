@@ -14,7 +14,7 @@ import { useSummaries } from '../-shared/use-summaries';
 const ProjectDetail = () => {
   const { projectId } = Route.useParams();
   const { index } = useDataSource();
-  const summaries = useSummaries(index ?? { rootKind: 'project-dir', projects: [], historyEntry: undefined, sessionCount: 0, totalSessionBytes: 0 });
+  const summaries = useSummaries(index);
 
   const project = index?.projects.find(p => p.encodedName === projectId);
   if (index === undefined || project === undefined) {

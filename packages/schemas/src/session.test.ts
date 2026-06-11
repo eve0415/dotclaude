@@ -88,6 +88,20 @@ describe('summarizeSession', () => {
     expect(summary.cwd).toBe('/workspaces/demo');
   });
 
+  it('counts block-content human turns but not tool results', () => {
+    const records = [
+      ...fixtureRecords(),
+      parse({
+        type: 'user',
+        uuid: 'u3',
+        sessionId: 's1',
+        timestamp: '2026-06-10T01:02:00.000Z',
+        message: { role: 'user', content: [{ type: 'text', text: 'also fix the lint warnings' }] },
+      }),
+    ];
+    expect(summarizeSession(records).userMessageCount).toBe(2);
+  });
+
   it('handles an empty record list', () => {
     const summary = summarizeSession([]);
     expect(summary.sessionId).toBeUndefined();

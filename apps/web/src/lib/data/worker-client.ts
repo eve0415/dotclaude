@@ -31,6 +31,15 @@ class ParseWorkerClient {
       if (response.type === 'result') pending.resolve(response.result);
       else pending.reject(new Error(response.message));
     });
+    // Without this, a worker that fails to load (bundling error, CSP block) would
+    // leave every in-flight promise pending forever and the UI stuck on spinners.
+    worker.addEventListener('error', event => {
+      const error = new Error(event.message === '' ? 'Parse worker failed to start' : event.message);
+      for (const pending of this.#pending.values()) pending.reject(error);
+      this.#pending.clear();
+      worker.terminate();
+      this.#worker = undefined;
+    });
     return worker;
   }
 
@@ -45,21 +54,22 @@ class ParseWorkerClient {
 
   async parseSession(file: File): Promise<TranscriptRecord[]> {
     const result = await this.#request({ kind: 'parse-session', file });
-    return result.kind === 'records' ? result.records : [];
+    if (result.kind !== 'records') throw new Error(`Unexpected worker result: ${result.kind}`);
+    return result.records;
   }
 
   async summarizeMany(files: { key: string; file: File }[], onProgress?: (done: number, total: number) => void): Promise<Map<string, SessionSummary>> {
     const result = await this.#request({ kind: 'summarize-many', files }, onProgress);
+    if (result.kind !== 'summaries') throw new Error(`Unexpected worker result: ${result.kind}`);
     const map = new Map<string, SessionSummary>();
-    if (result.kind === 'summaries') {
-      for (const { key, summary } of result.summaries) map.set(key, summary);
-    }
+    for (const { key, summary } of result.summaries) map.set(key, summary);
     return map;
   }
 
   async parseHistory(file: File): Promise<HistoryEntry[]> {
     const result = await this.#request({ kind: 'parse-history', file });
-    return result.kind === 'history' ? result.entries : [];
+    if (result.kind !== 'history') throw new Error(`Unexpected worker result: ${result.kind}`);
+    return result.entries;
   }
 }
 

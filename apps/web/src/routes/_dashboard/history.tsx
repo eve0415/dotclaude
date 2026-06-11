@@ -5,17 +5,16 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useDataSource } from '#lib/data/data-source';
+import { MISSING_FILE_ENTRY } from '#lib/data/file-entry';
 import { historyQuery } from '#lib/data/queries';
 import { formatDateTime } from '#lib/format';
 
 import { VirtualItem, useTotalSizeStyle } from '../-shared/virtual-item';
 
-const missingEntry = { path: '', name: '', size: 0, lastModified: 0, getFile: () => Promise.reject(new Error('no history')) };
-
 const HistoryPage = () => {
   const { index } = useDataSource();
   const historyEntry = index?.historyEntry;
-  const query = useQuery({ ...historyQuery(historyEntry ?? missingEntry), enabled: historyEntry !== undefined });
+  const query = useQuery({ ...historyQuery(historyEntry ?? MISSING_FILE_ENTRY), enabled: historyEntry !== undefined });
   const [filter, setFilter] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 

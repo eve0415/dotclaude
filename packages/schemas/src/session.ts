@@ -35,6 +35,13 @@ export interface SessionSummary {
   version: string | undefined;
 }
 
+/** A human-authored turn: non-empty string content, or blocks with text and no tool_result. */
+const isHumanTurn = (content: string | { type: string }[]): boolean => {
+  if (typeof content === 'string') return content.trim() !== '';
+  if (content.some(block => block.type === 'tool_result')) return false;
+  return content.some(block => block.type === 'text');
+};
+
 const firstMeaningfulUserText = (records: TranscriptRecord[]): string | undefined => {
   for (const record of records) {
     if (!isUserRecord(record) || record.isMeta === true) continue;
@@ -80,7 +87,7 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
       startedAt ??= record.timestamp;
       endedAt = record.timestamp;
     }
-    if (isUserRecord(record) && record.isMeta !== true && typeof record.message.content === 'string') {
+    if (isUserRecord(record) && record.isMeta !== true && isHumanTurn(record.message.content)) {
       userMessageCount += 1;
     }
     if (isAssistantRecord(record)) {

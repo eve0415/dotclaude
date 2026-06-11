@@ -10,7 +10,7 @@ import { isAssistantRecord, isUserRecord } from '@dotclaude/schemas/transcript';
  * appearing on their own.
  */
 
-export interface BaseRow {
+interface BaseRow {
   /** Stable list key. */
   id: string;
   timestamp: string | undefined;
@@ -41,6 +41,8 @@ export interface ToolRow extends BaseRow {
   toolUseId: string;
   name: string;
   input: unknown;
+  /** Serialized once at build time so per-keystroke search never re-stringifies. */
+  inputText: string;
   result: string | undefined;
   isError: boolean;
 }
@@ -97,11 +99,10 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
 
     if (isUserRecord(record)) {
       if (typeof record.message.content !== 'string') {
-        // Block content: merge tool_results into their tool rows, surface stray text.
-        let sawToolResult = false;
+        // Block content: merge tool_results into their tool rows, and surface any
+        // text blocks as a user row even when they ride alongside tool results.
         for (const block of record.message.content) {
           if (block.type === 'tool_result' && 'tool_use_id' in block && typeof block.tool_use_id === 'string') {
-            sawToolResult = true;
             const toolRow = toolRowByUseId.get(block.tool_use_id);
             if (toolRow !== undefined) {
               toolRow.result = toolResultText('content' in block ? block.content : undefined);
@@ -109,10 +110,8 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
             }
           }
         }
-        if (!sawToolResult) {
-          const text = userText(record.message.content);
-          if (text.trim() !== '') rows.push({ ...base, id: `r${recordIndex}`, kind: 'user', text });
-        }
+        const text = userText(record.message.content);
+        if (text.trim() !== '') rows.push({ ...base, id: `r${recordIndex}`, kind: 'user', text });
         continue;
       }
       const text = record.message.content;
@@ -134,13 +133,15 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
         } else if (block.type === 'text' && 'text' in block && typeof block.text === 'string') {
           if (block.text.trim() !== '') messageRows.push({ ...base, id, kind: 'assistant-text', markdown: block.text, model, usage: undefined });
         } else if (block.type === 'tool_use' && 'id' in block && typeof block.id === 'string' && 'name' in block && typeof block.name === 'string') {
+          const input = 'input' in block ? block.input : undefined;
           const toolRow: ToolRow = {
             ...base,
             id,
             kind: 'tool',
             toolUseId: block.id,
             name: block.name,
-            input: 'input' in block ? block.input : undefined,
+            input,
+            inputText: JSON.stringify(input) ?? '',
             result: undefined,
             isError: false,
           };
@@ -182,7 +183,7 @@ export const rowMatches = (row: TranscriptRow, needle: string): boolean => {
       haystacks.push(row.text);
       break;
     case 'tool':
-      haystacks.push(row.name, JSON.stringify(row.input ?? ''), row.result ?? '');
+      haystacks.push(row.name, row.inputText, row.result ?? '');
       break;
     case 'meta':
       haystacks.push(row.label, row.detail ?? '');

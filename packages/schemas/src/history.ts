@@ -1,12 +1,16 @@
 import { z } from 'zod';
 
-/** One line of `~/.claude/history.jsonl` — a prompt the user submitted. */
-export const historyEntrySchema = z.looseObject({
+/**
+ * One line of `~/.claude/history.jsonl` — a prompt the user submitted.
+ * Deliberately a strict-shape object (not loose): unknown keys are stripped,
+ * and `pastedContents` is intentionally omitted — raw clipboard pastes can
+ * contain secrets and are never rendered, so they must not be held in memory.
+ */
+export const historyEntrySchema = z.object({
   display: z.string(),
   timestamp: z.number(),
   project: z.string().optional(),
   sessionId: z.string().optional(),
-  pastedContents: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type HistoryEntry = z.infer<typeof historyEntrySchema>;

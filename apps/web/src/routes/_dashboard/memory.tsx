@@ -6,10 +6,11 @@ import { Tabs, TabsList, TabsTrigger } from '@dotclaude/ui/components/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
-import Markdown from 'react-markdown';
 
 import { useDataSource } from '#lib/data/data-source';
 import { projectMemoryQuery } from '#lib/data/queries';
+
+import { MarkdownBlock } from '../-shared/markdown-block';
 
 const typeVariant = (memoryType: string | undefined): 'default' | 'secondary' | 'outline' => {
   if (memoryType === 'feedback') return 'default';
@@ -37,7 +38,7 @@ const ProjectMemories = ({ project }: { project: ProjectRef }) => {
           </CardHeader>
           <CardContent>
             <div className='prose-sm text-foreground/90 max-w-none text-sm leading-relaxed [&_code]:font-mono [&_code]:text-xs [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5'>
-              <Markdown>{memory.body}</Markdown>
+              <MarkdownBlock markdown={memory.body} />
             </div>
             {memory.links.length === 0 ? null : (
               <div className='mt-3 flex flex-wrap gap-1.5'>

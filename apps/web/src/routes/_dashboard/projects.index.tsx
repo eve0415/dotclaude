@@ -12,7 +12,7 @@ import { useSummaries } from '../-shared/use-summaries';
 
 const ProjectsIndex = () => {
   const { index } = useDataSource();
-  const summaries = useSummaries(index ?? { rootKind: 'project-dir', projects: [], historyEntry: undefined, sessionCount: 0, totalSessionBytes: 0 });
+  const summaries = useSummaries(index);
   const { rows } = summaries;
 
   const perProject = useMemo(() => {

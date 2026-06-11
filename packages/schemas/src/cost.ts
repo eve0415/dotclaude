@@ -13,7 +13,8 @@ const CACHE_READ_MULTIPLIER = 0.1;
 /**
  * Longest-prefix-match pricing table. Model ids in transcripts can carry suffixes
  * (`claude-opus-4-6[1m]`, dated snapshots), so entries are prefixes, and adding a
- * future model is a single new entry.
+ * future model is a single new entry. Ordering matters: more-specific prefixes
+ * must come before less-specific ones (`claude-opus-4-8` before `claude-opus-4`).
  */
 const PRICING_TABLE: readonly (readonly [prefix: string, pricing: ModelPricing])[] = [
   // Harness-injected pseudo-model on synthetic records — real but free.

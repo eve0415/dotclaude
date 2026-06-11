@@ -7,10 +7,10 @@ import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
 import { Bot, Brain, ChevronDown, Info, User, Wrench } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import Markdown from 'react-markdown';
 
 import { formatOffset, formatTokens } from '#lib/format';
 
+import { MarkdownBlock } from '../../-shared/markdown-block';
 import { ModelBadge } from '../../-shared/model-badge';
 
 const COLLAPSED_RESULT_LINES = 24;
@@ -144,7 +144,7 @@ export const TranscriptRowView = ({ row, onOpenAgent, agentForToolUse }: Transcr
           <Gutter offsetMs={row.offsetMs} icon={<Bot className='size-3.5' />} />
           <div className='min-w-0 flex-1 px-1'>
             <div className={markdownClasses}>
-              <Markdown>{row.markdown}</Markdown>
+              <MarkdownBlock markdown={row.markdown} />
             </div>
             {row.usage === undefined && row.model === undefined ? null : (
               <div className='mt-1 flex items-center gap-2'>

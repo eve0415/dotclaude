@@ -1,6 +1,3 @@
-import type { SessionRow } from '../-shared/use-summaries';
-import type { UsageEvent } from '@dotclaude/schemas/aggregate';
-
 import { aggregateUsage, mergeToolCounts } from '@dotclaude/schemas/aggregate';
 import { totalContextTokens } from '@dotclaude/schemas/usage';
 import { Card, CardContent, CardHeader, CardTitle } from '@dotclaude/ui/components/card';
@@ -15,24 +12,13 @@ import { MeterBar } from '../-shared/meter-bar';
 import { ModelBadge } from '../-shared/model-badge';
 import { StatCard } from '../-shared/stat-card';
 import { SweepProgress } from '../-shared/sweep-progress';
-import { useSummaries } from '../-shared/use-summaries';
+import { usageEvents, useSummaries } from '../-shared/use-summaries';
 
 import { ActivityChart } from './-components/activity-chart';
 
-const usageEvents = (rows: SessionRow[]): UsageEvent[] => {
-  const events: UsageEvent[] = [];
-  for (const row of rows) {
-    if (row.summary?.startedAt === undefined) continue;
-    for (const [model, usage] of Object.entries(row.summary.usageByModel)) {
-      events.push({ timestamp: row.summary.startedAt, model, usage });
-    }
-  }
-  return events;
-};
-
 const Overview = () => {
   const { index } = useDataSource();
-  const summaries = useSummaries(index ?? { rootKind: 'project-dir', projects: [], historyEntry: undefined, sessionCount: 0, totalSessionBytes: 0 });
+  const summaries = useSummaries(index);
   const { rows } = summaries;
 
   const derived = useMemo(() => {
