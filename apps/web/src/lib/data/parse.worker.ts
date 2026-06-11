@@ -2,7 +2,7 @@ import type { SessionSummary, TranscriptRecord } from './worker-protocol';
 import type { WorkerRequest, WorkerResponse } from './worker-protocol';
 
 import { parseHistoryLine } from '@dotclaude/schemas/history';
-import { summarizeSession } from '@dotclaude/schemas/session';
+import { createSessionSummarizer } from '@dotclaude/schemas/session';
 import { parseTranscriptLine } from '@dotclaude/schemas/transcript';
 
 import { streamLines } from './jsonl';
@@ -22,11 +22,21 @@ const parseFile = async (file: File): Promise<TranscriptRecord[]> => {
   return records;
 };
 
+// Streaming fold: the sweep never holds a file's parsed record array, only one record.
+const summarizeFile = async (file: File): Promise<SessionSummary> => {
+  const summarizer = createSessionSummarizer();
+  for await (const line of streamLines(file)) {
+    const record = parseTranscriptLine(line);
+    if (record !== undefined) summarizer.add(record);
+  }
+  return summarizer.finish();
+};
+
 const summarizeFiles = async (files: { key: string; file: File }[], post: (response: WorkerResponse) => void, requestId: number): Promise<void> => {
   const summaries: { key: string; summary: SessionSummary }[] = [];
   let done = 0;
   for (const { key, file } of files) {
-    summaries.push({ key, summary: summarizeSession(await parseFile(file)) });
+    summaries.push({ key, summary: await summarizeFile(file) });
     done += 1;
     if (done % 5 === 0 || done === files.length) {
       post({ type: 'progress', requestId, done, total: files.length });

@@ -30,29 +30,36 @@ const isHumanTurn = (content: string | { type: string }[]): boolean => {
   return content.some(block => block.type === 'text');
 };
 
-const firstMeaningfulUserText = (records: TranscriptRecord[]): string | undefined => {
-  for (const record of records) {
-    if (!isUserRecord(record) || record.isMeta === true) continue;
-    const { content } = record.message;
-    if (typeof content === 'string') {
-      const trimmed = content.trim();
-      // Skip harness-injected wrappers (local command output, system reminders).
-      if (trimmed === '' || trimmed.startsWith('<')) continue;
-      return trimmed;
-    }
-    for (const block of content) {
-      if (block.type === 'text' && 'text' in block && typeof block.text === 'string') {
-        const trimmed = block.text.trim();
-        if (trimmed !== '' && !trimmed.startsWith('<')) return trimmed;
-      }
+const meaningfulUserText = (record: TranscriptRecord): string | undefined => {
+  if (!isUserRecord(record) || record.isMeta === true) return undefined;
+  const { content } = record.message;
+  if (typeof content === 'string') {
+    const trimmed = content.trim();
+    // Skip harness-injected wrappers (local command output, system reminders).
+    return trimmed === '' || trimmed.startsWith('<') ? undefined : trimmed;
+  }
+  for (const block of content) {
+    if (block.type === 'text' && 'text' in block && typeof block.text === 'string') {
+      const trimmed = block.text.trim();
+      if (trimmed !== '' && !trimmed.startsWith('<')) return trimmed;
     }
   }
   return undefined;
 };
 
-export const summarizeSession = (records: TranscriptRecord[]): SessionSummary => {
+export interface SessionSummarizer {
+  add: (record: TranscriptRecord) => void;
+  finish: () => SessionSummary;
+}
+
+/**
+ * Incremental single-pass summarizer, so callers streaming a multi-hundred-MB
+ * transcript never have to hold the parsed record array in memory.
+ */
+export const createSessionSummarizer = (): SessionSummarizer => {
   let sessionId: string | undefined;
   let slug: string | undefined;
+  let firstUserPrompt: string | undefined;
   let startedAt: string | undefined;
   let endedAt: string | undefined;
   let gitBranch: string | undefined;
@@ -67,12 +74,13 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
   let userMessageCount = 0;
   let assistantMessageCount = 0;
 
-  for (const record of records) {
+  const add = (record: TranscriptRecord): void => {
     sessionId ??= record.sessionId;
     slug ??= record.slug;
     gitBranch ??= record.gitBranch;
     cwd ??= record.cwd;
     version ??= record.version;
+    firstUserPrompt ??= meaningfulUserText(record);
     if (record.timestamp !== undefined) {
       startedAt ??= record.timestamp;
       endedAt = record.timestamp;
@@ -97,17 +105,15 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
         }
       }
     }
-  }
+  };
 
-  const durationMs = startedAt !== undefined && endedAt !== undefined ? Math.max(0, new Date(endedAt).getTime() - new Date(startedAt).getTime()) : undefined;
-
-  return {
+  const finish = (): SessionSummary => ({
     sessionId,
     slug,
-    firstUserPrompt: firstMeaningfulUserText(records),
+    firstUserPrompt,
     startedAt,
     endedAt,
-    durationMs,
+    durationMs: startedAt !== undefined && endedAt !== undefined ? Math.max(0, new Date(endedAt).getTime() - new Date(startedAt).getTime()) : undefined,
     models: [...models],
     usage,
     // fromEntries defines own data properties, so hostile keys survive as plain entries.
@@ -118,5 +124,13 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
     gitBranch,
     cwd,
     version,
-  };
+  });
+
+  return { add, finish };
+};
+
+export const summarizeSession = (records: Iterable<TranscriptRecord>): SessionSummary => {
+  const summarizer = createSessionSummarizer();
+  for (const record of records) summarizer.add(record);
+  return summarizer.finish();
 };
