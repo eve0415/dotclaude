@@ -46,11 +46,6 @@ const AgentBody = ({ input }: { input: z.infer<typeof agentSchema> }) => (
   <div className='flex flex-col gap-2'>
     {input.description === undefined ? null : <p className='text-sm font-medium'>{input.description}</p>}
     <div className='flex flex-wrap items-center gap-1.5'>
-      {input.model === undefined ? null : (
-        <Badge variant='outline' className='font-mono text-[10px]'>
-          {input.model}
-        </Badge>
-      )}
       {input.isolation === undefined ? null : (
         <Badge variant='outline' className='text-[10px]'>
           {input.isolation}
@@ -207,6 +202,13 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
     if (parsed.success) return <TodoListBody input={parsed.data} />;
   }
   return <FallbackBody input={input} />;
+};
+
+/** Requested model of an Agent/Task call — shown as a badge in the card header. */
+export const toolModel = (name: string, input: unknown): string | undefined => {
+  if (!AGENT_TOOLS.has(name)) return undefined;
+  const parsed = agentSchema.safeParse(input);
+  return parsed.success ? parsed.data.model : undefined;
 };
 
 /** Short header summary shown next to the tool name while the card is scanned. */

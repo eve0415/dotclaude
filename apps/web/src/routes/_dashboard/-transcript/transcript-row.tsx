@@ -15,7 +15,7 @@ import { MarkdownBlock, markdownClasses } from '../../-shared/markdown-block';
 import { ModelBadge } from '../../-shared/model-badge';
 
 import { Collapsible, TruncatedPre } from './primitives';
-import { ToolInputBody, toolSummary } from './tool-input';
+import { ToolInputBody, toolModel, toolSummary } from './tool-input';
 import { ToolResultBody } from './tool-result';
 import { ImageAttachment, ImageRefChip } from './transcript-image';
 
@@ -40,6 +40,8 @@ const ToolRowView = ({
     onOpenAgent?.(row.toolUseId);
   }, [onOpenAgent, row.toolUseId]);
   const summary = toolSummary(row.name, row.input);
+  const model = toolModel(row.name, row.input);
+  const canOpenAgent = agentForToolUse !== undefined && onOpenAgent !== undefined;
   return (
     <div className='flex gap-3 py-1'>
       <Gutter offsetMs={row.offsetMs} icon={<Wrench className='size-3.5' />} />
@@ -49,10 +51,15 @@ const ToolRowView = ({
           <span className='sr-only'>{row.result === undefined ? 'no result recorded' : row.isError ? 'failed' : 'succeeded'}</span>
           <span className='shrink-0 font-mono text-xs font-medium'>{row.name}</span>
           {summary === undefined ? null : <span className='text-muted-foreground min-w-0 truncate text-xs'>{summary}</span>}
-          {agentForToolUse === undefined || onOpenAgent === undefined ? null : (
-            <Button variant='outline' size='sm' className='ml-auto h-6 shrink-0 text-xs' onClick={openAgent}>
-              ↳ open subagent
-            </Button>
+          {model === undefined && !canOpenAgent ? null : (
+            <span className='ml-auto flex shrink-0 items-center gap-1.5'>
+              {model === undefined ? null : <ModelBadge model={model} />}
+              {canOpenAgent ? (
+                <Button variant='outline' size='sm' className='h-6 text-xs' onClick={openAgent}>
+                  ↳ open subagent
+                </Button>
+              ) : null}
+            </span>
           )}
         </div>
         <div className='flex flex-col gap-3 p-3'>

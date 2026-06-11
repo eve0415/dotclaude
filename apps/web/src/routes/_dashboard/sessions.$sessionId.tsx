@@ -3,6 +3,7 @@ import type { TranscriptRow } from './-transcript/build-rows';
 import type { ReactNode } from 'react';
 
 import { summarizeSession } from '@dotclaude/schemas/session';
+import { isAssistantRecord } from '@dotclaude/schemas/transcript';
 import { Badge } from '@dotclaude/ui/components/badge';
 import { Input } from '@dotclaude/ui/components/input';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@dotclaude/ui/components/sheet';
@@ -86,6 +87,14 @@ const AgentDrawer = ({
     combine: results => results.map(result => result.data),
   });
   const rows = useMemo(() => buildRows(records.data ?? []), [records.data]);
+  // The meta file doesn't record the model — derive what actually ran from the transcript.
+  const models = useMemo(() => {
+    const unique = new Set<string>();
+    for (const record of records.data ?? []) {
+      if (isAssistantRecord(record) && record.message.model !== undefined && record.message.model !== '<synthetic>') unique.add(record.message.model);
+    }
+    return [...unique];
+  }, [records.data]);
 
   const onOpenChange = useCallback(
     (open: boolean) => {
@@ -129,6 +138,13 @@ const AgentDrawer = ({
             agent-{agentId}
             {meta.data?.agentType === undefined ? '' : ` · ${meta.data.agentType}`}
           </SheetDescription>
+          {models.length === 0 ? null : (
+            <div className='flex flex-wrap items-center gap-1.5'>
+              {models.map(model => (
+                <ModelBadge key={model} model={model} />
+              ))}
+            </div>
+          )}
         </SheetHeader>
         {agent === undefined ? (
           <p className='text-muted-foreground p-4 text-sm'>This agent is not present in the opened data.</p>
