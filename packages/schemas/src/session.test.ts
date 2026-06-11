@@ -2,7 +2,7 @@ import type { TranscriptRecord } from './transcript';
 
 import { describe, expect, it } from 'vitest';
 
-import { extractToolCalls, summarizeSession } from './session';
+import { summarizeSession } from './session';
 import { parseTranscriptLine } from './transcript';
 
 const parse = (value: object): TranscriptRecord => {
@@ -107,18 +107,5 @@ describe('summarizeSession', () => {
     expect(summary.sessionId).toBeUndefined();
     expect(summary.durationMs).toBeUndefined();
     expect(summary.models).toEqual([]);
-  });
-});
-
-describe('extractToolCalls', () => {
-  it('pairs tool_use blocks with their results', () => {
-    const calls = extractToolCalls(fixtureRecords());
-    expect(calls).toHaveLength(2);
-    const bash = calls.find(c => c.name === 'Bash');
-    expect(bash?.result).toBe('error TS2322');
-    expect(bash?.isError).toBe(true);
-    const edit = calls.find(c => c.name === 'Edit');
-    expect(edit?.result).toBeUndefined();
-    expect(edit?.isError).toBe(false);
   });
 });

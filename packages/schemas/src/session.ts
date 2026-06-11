@@ -1,20 +1,8 @@
-import type { ToolResultBlock, ToolUseBlock, TranscriptRecord } from './transcript';
+import type { TranscriptRecord } from './transcript';
 import type { UsageTotals } from './usage';
 
 import { isAssistantRecord, isUserRecord } from './transcript';
 import { addUsageTotals, emptyUsageTotals, usageToTotals } from './usage';
-
-/** One paired tool invocation: the assistant's `tool_use` and (when present) the matching `tool_result`. */
-export interface ToolCall {
-  id: string;
-  name: string;
-  input: unknown;
-  result: unknown;
-  isError: boolean;
-  /** uuid of the assistant record that issued the call. */
-  recordUuid: string | undefined;
-  timestamp: string | undefined;
-}
 
 export interface SessionSummary {
   sessionId: string | undefined;
@@ -131,40 +119,4 @@ export const summarizeSession = (records: TranscriptRecord[]): SessionSummary =>
     cwd,
     version,
   };
-};
-
-const isToolUseBlock = (block: { type: string }): block is ToolUseBlock => block.type === 'tool_use';
-const isToolResultBlock = (block: { type: string }): block is ToolResultBlock => block.type === 'tool_result';
-
-/** Pair every assistant `tool_use` with its `tool_result` from subsequent user records. */
-export const extractToolCalls = (records: TranscriptRecord[]): ToolCall[] => {
-  const calls = new Map<string, ToolCall>();
-  for (const record of records) {
-    if (isAssistantRecord(record)) {
-      for (const block of record.message.content) {
-        if (isToolUseBlock(block)) {
-          calls.set(block.id, {
-            id: block.id,
-            name: block.name,
-            input: block.input,
-            result: undefined,
-            isError: false,
-            recordUuid: record.uuid,
-            timestamp: record.timestamp,
-          });
-        }
-      }
-    } else if (isUserRecord(record) && typeof record.message.content !== 'string') {
-      for (const block of record.message.content) {
-        if (isToolResultBlock(block)) {
-          const call = calls.get(block.tool_use_id);
-          if (call !== undefined) {
-            call.result = block.content;
-            call.isError = block.is_error === true;
-          }
-        }
-      }
-    }
-  }
-  return [...calls.values()];
 };

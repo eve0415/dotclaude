@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { estimateCostUsd } from './cost';
 import { parseHistoryLine } from './history';
 import { parseMemoryFile } from './memory';
-import { extractToolCalls, summarizeSession } from './session';
+import { summarizeSession } from './session';
 import { parseTranscriptLine } from './transcript';
 
 /**
@@ -48,7 +48,7 @@ const scanTranscripts = (): TranscriptStats => {
         records.push(record);
       }
       const summary = summarizeSession(records);
-      stats.toolCalls += extractToolCalls(records).length;
+      for (const count of Object.values(summary.toolCounts)) stats.toolCalls += count;
       for (const [model, usage] of Object.entries(summary.usageByModel)) {
         const cost = estimateCostUsd(model, usage);
         if (cost === undefined) unknownModels.add(model);
