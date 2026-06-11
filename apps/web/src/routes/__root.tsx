@@ -46,7 +46,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: 'dotclaude — Claude Code session explorer' },
       { name: 'description', content: 'Visualize your Claude Code sessions, tool calls, token usage, and memories. Everything stays in your browser.' },
     ],
-    links: [{ rel: 'stylesheet', href: rootCss }],
+    links: [
+      { rel: 'stylesheet', href: rootCss },
+      { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+      { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      { rel: 'manifest', href: '/site.webmanifest' },
+    ],
   }),
   component: RootComponent,
 });
