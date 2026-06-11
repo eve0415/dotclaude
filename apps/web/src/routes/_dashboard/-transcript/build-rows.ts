@@ -50,7 +50,7 @@ export interface ToolRow extends BaseRow {
 export interface MetaRow extends BaseRow {
   kind: 'meta';
   /** Drives icon + tone; new sources should add a variant instead of reusing 'other'. */
-  variant: 'caveat' | 'reminder' | 'context' | 'system' | 'other';
+  variant: 'caveat' | 'reminder' | 'context' | 'skill' | 'system' | 'other';
   label: string;
   detail: string | undefined;
 }
@@ -119,6 +119,10 @@ const classifyUserText = (
   if (reminder !== undefined && isMeta) {
     return { ...base, id, kind: 'meta', variant: 'reminder', label: 'system reminder', detail: reminder.trim() };
   }
+  if (isMeta && text.startsWith('Base directory for this skill:')) {
+    // Skill bodies are markdown — the view renders this variant with MarkdownBlock.
+    return { ...base, id, kind: 'meta', variant: 'skill', label: 'skill context', detail: text };
+  }
   if (isMeta) {
     return { ...base, id, kind: 'meta', variant: 'context', label: 'injected context', detail: text };
   }
@@ -155,9 +159,13 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
     const base = { timestamp, offsetMs };
 
     if (isUserRecord(record)) {
-      if (typeof record.message.content !== 'string') {
+      let text: string;
+      if (typeof record.message.content === 'string') {
+        text = record.message.content;
+      } else {
         // Block content: merge tool_results into their tool rows, and surface any
-        // text blocks as a user row even when they ride alongside tool results.
+        // text blocks alongside them. The text still goes through classification —
+        // skill contexts and reminders arrive as isMeta block-content records.
         for (const block of record.message.content) {
           if (block.type === 'tool_result' && 'tool_use_id' in block && typeof block.tool_use_id === 'string') {
             const toolRow = toolRowByUseId.get(block.tool_use_id);
@@ -167,11 +175,10 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
             }
           }
         }
-        const text = userText(record.message.content);
-        if (text.trim() !== '') rows.push({ ...base, id: `r${recordIndex}`, kind: 'user', text });
-        continue;
+        text = userText(record.message.content);
+        if (text.trim() === '') continue;
       }
-      const row = classifyUserText(base, `r${recordIndex}`, record.message.content, record.isMeta === true);
+      const row = classifyUserText(base, `r${recordIndex}`, text, record.isMeta === true);
       if (row === undefined) continue;
       // Local-command stdout arrives as its own record right after the
       // invocation — fold it into the command row so they read as one event.

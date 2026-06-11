@@ -213,9 +213,11 @@ const showcaseJsonl = (): string => {
       ],
       90,
     ),
-    toolResult(
-      'toolu_demo_skill',
+    toolResult('toolu_demo_skill', 'Launching skill: verify'),
+    user(
       [
+        'Base directory for this skill: /home/eve/.claude/skills/verify',
+        '',
         '# Verify',
         '',
         'Run the full local CI suite and confirm every gate passes before claiming done.',
@@ -238,6 +240,7 @@ const showcaseJsonl = (): string => {
         '',
         '3. Report results honestly — paste failing output instead of summarizing it away.',
       ].join('\n'),
+      { isMeta: true },
     ),
     assistant(
       [

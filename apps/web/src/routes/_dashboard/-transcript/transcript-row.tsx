@@ -6,7 +6,7 @@ import { usageToTotals } from '@dotclaude/schemas/usage';
 import { Badge } from '@dotclaude/ui/components/badge';
 import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
-import { Bot, Brain, Info, MessageSquareWarning, SquareSlash, SquareTerminal, User, Wrench } from 'lucide-react';
+import { BookOpen, Bot, Brain, Info, MessageSquareWarning, SquareSlash, SquareTerminal, User, Wrench } from 'lucide-react';
 import { useCallback } from 'react';
 
 import { formatLineCount, formatOffset, formatTokens } from '#lib/format';
@@ -73,6 +73,7 @@ const META_ICONS: Record<Extract<TranscriptRow, { kind: 'meta' }>['variant'], Lu
   caveat: MessageSquareWarning,
   reminder: Info,
   context: Info,
+  skill: BookOpen,
   system: SquareTerminal,
   other: Info,
 };
@@ -112,7 +113,13 @@ const MetaRowView = ({ row }: { row: Extract<TranscriptRow, { kind: 'meta' }> })
             }
           >
             <div className='border-border/60 bg-muted/30 rounded-md border-l-2 px-3 py-2'>
-              <TruncatedPre flat text={row.detail} label={row.label} className='text-muted-foreground' />
+              {row.variant === 'skill' ? (
+                <div className={`${markdownClasses} max-h-[32rem] overflow-auto`}>
+                  <MarkdownBlock markdown={row.detail} />
+                </div>
+              ) : (
+                <TruncatedPre flat text={row.detail} label={row.label} className='text-muted-foreground' />
+              )}
             </div>
           </Collapsible>
         )}

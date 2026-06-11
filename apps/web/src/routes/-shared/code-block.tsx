@@ -65,7 +65,7 @@ export const CodeBlock = ({
           {lines.slice(0, visibleCount).map((line, i) => (
             <span key={i} className='flex min-h-[1lh]'>
               {showLineNumbers ? (
-                <span aria-hidden className='text-muted-foreground/60 mr-3 shrink-0 text-right tabular-nums select-none' style={gutterStyle}>
+                <span aria-hidden className='text-muted-foreground mr-3 shrink-0 text-right tabular-nums select-none' style={gutterStyle}>
                   {startLine + i}
                 </span>
               ) : null}
