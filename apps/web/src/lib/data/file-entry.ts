@@ -28,27 +28,28 @@ export const fileEntryKey = (entry: FileEntry): string => `${entry.path}:${entry
 const IGNORED_DIRECTORIES = new Set(['node_modules', '.git', 'shell-snapshots', 'file-history', 'cache', 'telemetry', 'paste-cache', 'backups']);
 
 /** Recursively walk a directory handle into FileEntry[]. Skips bulky non-visualized directories. */
+const statFile = async (handle: FileSystemFileHandle, path: string): Promise<FileEntry[]> => {
+  const file = await handle.getFile();
+  return [{ path, name: handle.name, size: file.size, lastModified: file.lastModified, getFile: () => handle.getFile() }];
+};
+
 export const entriesFromDirectoryHandle = async (root: FileSystemDirectoryHandle): Promise<FileEntry[]> => {
-  const entries: FileEntry[] = [];
-  const walk = async (dir: FileSystemDirectoryHandle, prefix: string): Promise<void> => {
+  // Each getFile() is a browser-process round-trip; thousands of them serialized
+  // dominate scan time, so stat files and walk subdirectories concurrently.
+  const walk = async (dir: FileSystemDirectoryHandle, prefix: string): Promise<FileEntry[]> => {
+    const tasks: Promise<FileEntry[]>[] = [];
     for await (const handle of dir.values()) {
       if (handle.kind === 'directory') {
         if (IGNORED_DIRECTORIES.has(handle.name)) continue;
-        await walk(handle, `${prefix}${handle.name}/`);
+        tasks.push(walk(handle, `${prefix}${handle.name}/`));
       } else {
-        const file = await handle.getFile();
-        entries.push({
-          path: `${prefix}${handle.name}`,
-          name: handle.name,
-          size: file.size,
-          lastModified: file.lastModified,
-          getFile: () => handle.getFile(),
-        });
+        tasks.push(statFile(handle, `${prefix}${handle.name}`));
       }
     }
+    const nested = await Promise.all(tasks);
+    return nested.flat();
   };
-  await walk(root, '');
-  return entries;
+  return walk(root, '');
 };
 
 /**
