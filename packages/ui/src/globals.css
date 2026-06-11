@@ -29,12 +29,34 @@
   --border: oklch(0.922 0.005 325.62);
   --input: oklch(0.922 0.005 325.62);
   --ring: oklch(0.711 0.019 323.02);
-  --chart-1: oklch(0.865 0.012 325.68);
-  --chart-2: oklch(0.542 0.034 322.5);
-  --chart-3: oklch(0.435 0.029 321.78);
-  --chart-4: oklch(0.364 0.029 323.89);
-  --chart-5: oklch(0.263 0.024 320.12);
+  /* Categorical chart palette: hues spread across teal/gold/indigo/rose so
+     model series stay distinguishable under color-vision deficiencies; the
+     fallback keeps the brand mauve. L ≈ 0.54–0.60 keeps ≥3:1 against white. */
+  --chart-1: oklch(0.58 0.12 195);
+  --chart-2: oklch(0.54 0.14 75);
+  --chart-3: oklch(0.56 0.13 250);
+  --chart-4: oklch(0.55 0.13 20);
+  --chart-5: oklch(0.6 0.05 325);
   --radius: 0.625rem;
+  /* Syntax tokens (Shiki css-variables theme, prefix --code-). Muted editorial
+     palette; L ≤ 0.46 keeps AA 4.5:1 on the bg-muted/60 code panels. */
+  --code-token-keyword: oklch(0.44 0.12 320);
+  --code-token-string: oklch(0.42 0.08 140);
+  --code-token-string-expression: oklch(0.42 0.08 170);
+  --code-token-comment: oklch(0.46 0.02 322);
+  --code-token-constant: oklch(0.44 0.11 45);
+  --code-token-function: oklch(0.43 0.09 220);
+  --code-token-parameter: oklch(0.45 0.07 350);
+  --code-token-punctuation: oklch(0.46 0.03 322);
+  --code-token-link: oklch(0.42 0.11 250);
+  /* Diff colors: sage-green adds / terracotta removes — desaturated washes so
+     syntax tokens stay readable on top; -hl is the intraline word highlight. */
+  --diff-add-bg: oklch(0.97 0.015 145);
+  --diff-add-hl: oklch(0.92 0.045 145);
+  --diff-add-fg: oklch(0.38 0.08 145);
+  --diff-remove-bg: oklch(0.97 0.015 25);
+  --diff-remove-hl: oklch(0.92 0.045 25);
+  --diff-remove-fg: oklch(0.38 0.08 25);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0.008 326);
   --sidebar-primary: oklch(0.212 0.019 322.12);
@@ -64,11 +86,29 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.542 0.034 322.5);
-  --chart-1: oklch(0.865 0.012 325.68);
-  --chart-2: oklch(0.542 0.034 322.5);
-  --chart-3: oklch(0.435 0.029 321.78);
-  --chart-4: oklch(0.364 0.029 323.89);
-  --chart-5: oklch(0.263 0.024 320.12);
+  /* Dark-mode chart palette: same hues lifted to L ≈ 0.72–0.75 for ≥3:1
+     against the dark mauve background. */
+  --chart-1: oklch(0.74 0.11 195);
+  --chart-2: oklch(0.72 0.13 75);
+  --chart-3: oklch(0.73 0.11 250);
+  --chart-4: oklch(0.72 0.12 20);
+  --chart-5: oklch(0.75 0.04 325);
+  /* Dark syntax tokens: L ≥ 0.74 keeps AA 4.5:1 on the dark code panels. */
+  --code-token-keyword: oklch(0.79 0.08 320);
+  --code-token-string: oklch(0.78 0.07 140);
+  --code-token-string-expression: oklch(0.78 0.07 170);
+  --code-token-comment: oklch(0.74 0.02 322);
+  --code-token-constant: oklch(0.78 0.09 50);
+  --code-token-function: oklch(0.77 0.07 220);
+  --code-token-parameter: oklch(0.78 0.06 350);
+  --code-token-punctuation: oklch(0.75 0.03 322);
+  --code-token-link: oklch(0.76 0.09 250);
+  --diff-add-bg: oklch(0.22 0.025 145);
+  --diff-add-hl: oklch(0.29 0.055 145);
+  --diff-add-fg: oklch(0.8 0.07 145);
+  --diff-remove-bg: oklch(0.22 0.025 25);
+  --diff-remove-hl: oklch(0.29 0.055 25);
+  --diff-remove-fg: oklch(0.79 0.08 25);
   --sidebar: oklch(0.212 0.019 322.12);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
