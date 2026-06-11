@@ -1,10 +1,11 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "dotclaude",
   "compatibility_date": "2026-06-03",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
-  "observability": {
-    "enabled": false
+  "upload_source_maps": true,
+  "placement": {
+    "mode": "smart"
   }
 }
