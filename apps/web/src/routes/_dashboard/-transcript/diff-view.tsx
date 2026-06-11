@@ -3,11 +3,12 @@ import type { DiffLine, Mark } from './diff-lines';
 import type { ReactNode } from 'react';
 import type { ThemedToken } from 'shiki/core';
 
-import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { tokenColorClass, useHighlightTokens } from '#lib/highlight';
+
+import { ShowAllButton, useTruncated } from '../../-shared/show-all';
 
 import { buildDiffLines, splitByMarks } from './diff-lines';
 
@@ -88,12 +89,8 @@ export const DiffView = ({ oldText, newText, lang }: { oldText: string; newText:
   const lines = useMemo(() => buildDiffLines(oldText, newText), [oldText, newText]);
   const oldTokens = useHighlightTokens(oldText, lang);
   const newTokens = useHighlightTokens(newText, lang);
-  const [showAll, setShowAll] = useState(false);
-  const expand = useCallback(() => {
-    setShowAll(true);
-  }, []);
-  const truncated = !showAll && lines.length > COLLAPSED_DIFF_LINES;
-  const visible = truncated ? lines.slice(0, COLLAPSED_DIFF_LINES) : lines;
+  const { visibleCount, truncated, expand } = useTruncated(lines.length, COLLAPSED_DIFF_LINES);
+  const visible = truncated ? lines.slice(0, visibleCount) : lines;
 
   return (
     <div className='min-w-0'>
@@ -104,11 +101,7 @@ export const DiffView = ({ oldText, newText, lang }: { oldText: string; newText:
           ))}
         </code>
       </pre>
-      {truncated ? (
-        <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
-          Show all {lines.length} diff lines
-        </Button>
-      ) : null}
+      {truncated ? <ShowAllButton count={lines.length} label='diff lines' onClick={expand} /> : null}
     </div>
   );
 };

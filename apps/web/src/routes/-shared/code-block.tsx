@@ -1,13 +1,12 @@
 import type { HighlightLang } from '#lib/highlight';
 import type { ThemedToken } from 'shiki/core';
 
-import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { tokenColorClass, useHighlightTokens } from '#lib/highlight';
 
-const COLLAPSED_LINES = 24;
+import { ShowAllButton, useTruncated } from './show-all';
 
 export const LineTokens = ({ tokens }: { tokens: ThemedToken[] }) => (
   <>
@@ -47,15 +46,9 @@ export const CodeBlock = ({
   flat?: boolean;
   className?: string;
 }) => {
-  const [showAll, setShowAll] = useState(false);
-  const expand = useCallback(() => {
-    setShowAll(true);
-  }, []);
-
   const tokens = useHighlightTokens(code, lang);
   const lines = useMemo(() => code.split('\n'), [code]);
-  const truncated = !showAll && lines.length > COLLAPSED_LINES;
-  const visibleCount = truncated ? COLLAPSED_LINES : lines.length;
+  const { visibleCount, truncated, expand } = useTruncated(lines.length);
   const gutterStyle = useMemo(() => ({ minWidth: `${String(String(startLine + lines.length - 1).length)}ch` }), [lines.length, startLine]);
 
   return (
@@ -74,11 +67,7 @@ export const CodeBlock = ({
           ))}
         </code>
       </pre>
-      {truncated ? (
-        <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
-          Show all {lines.length} lines of {label}
-        </Button>
-      ) : null}
+      {truncated ? <ShowAllButton count={lines.length} label={`lines of ${label}`} onClick={expand} /> : null}
     </div>
   );
 };

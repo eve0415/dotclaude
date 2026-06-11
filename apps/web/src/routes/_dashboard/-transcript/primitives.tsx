@@ -1,14 +1,13 @@
 import type { AnsiSegment } from '#lib/ansi';
 import type { ReactNode } from 'react';
 
-import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { hasAnsi, parseAnsi } from '#lib/ansi';
 
-const COLLAPSED_RESULT_LINES = 24;
+import { ShowAllButton, useTruncated } from '../../-shared/show-all';
 
 const segmentClass = (segment: AnsiSegment): string | undefined =>
   cn(segment.bold && 'font-semibold', segment.dim && 'opacity-60', segment.italic && 'italic', segment.underline && 'underline') || undefined;
@@ -46,13 +45,9 @@ export const Collapsible = ({ summary, children, defaultOpen = false }: { summar
 };
 
 export const TruncatedPre = ({ text, label, flat = false, className }: { text: string; label: string; flat?: boolean; className?: string }) => {
-  const [showAll, setShowAll] = useState(false);
-  const expand = useCallback(() => {
-    setShowAll(true);
-  }, []);
   const lines = text.split('\n');
-  const truncated = !showAll && lines.length > COLLAPSED_RESULT_LINES;
-  const visible = truncated ? lines.slice(0, COLLAPSED_RESULT_LINES).join('\n') : text;
+  const { visibleCount, truncated, expand } = useTruncated(lines.length);
+  const visible = truncated ? lines.slice(0, visibleCount).join('\n') : text;
   return (
     <div className='min-w-0'>
       <pre
@@ -64,11 +59,7 @@ export const TruncatedPre = ({ text, label, flat = false, className }: { text: s
       >
         {hasAnsi(visible) ? <AnsiText text={visible} /> : visible}
       </pre>
-      {truncated ? (
-        <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
-          Show all {lines.length} lines of {label}
-        </Button>
-      ) : null}
+      {truncated ? <ShowAllButton count={lines.length} label={`lines of ${label}`} onClick={expand} /> : null}
     </div>
   );
 };
