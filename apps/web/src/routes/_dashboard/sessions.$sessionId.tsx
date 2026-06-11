@@ -79,12 +79,13 @@ const AgentDrawer = ({
   const agentId = path.at(-1) ?? '';
   const agent = session.agents.find(a => a.agentId === agentId);
   const records = useQuery(sessionRecordsQuery(agent?.entry));
-  const meta = useQuery(agentMetaQuery(agent?.metaEntry));
   const pathAgents = useMemo(() => path.map(id => session.agents.find(a => a.agentId === id)), [path, session.agents]);
   const crumbMetas = useQueries({
     queries: pathAgents.map(a => agentMetaQuery(a?.metaEntry)),
     combine: results => results.map(result => result.data),
   });
+  // The shown agent is the last path entry, so its meta is already in the crumb queries.
+  const meta = crumbMetas.at(-1);
   const rows = useMemo(() => buildRows(records.data ?? []), [records.data]);
   // The meta file doesn't record the model — derive what actually ran from the transcript.
   const models = useMemo(() => {
@@ -128,14 +129,14 @@ const AgentDrawer = ({
                 </span>
               ))}
               <span aria-current='page' className='text-foreground max-w-40 truncate'>
-                {meta.data?.description ?? agentId}
+                {meta?.description ?? agentId}
               </span>
             </nav>
           )}
-          <SheetTitle className='text-sm'>↳ {meta.data?.description ?? `subagent ${agentId}`}</SheetTitle>
+          <SheetTitle className='text-sm'>↳ {meta?.description ?? `subagent ${agentId}`}</SheetTitle>
           <SheetDescription className='font-mono text-xs'>
             agent-{agentId}
-            {meta.data?.agentType === undefined ? '' : ` · ${meta.data.agentType}`}
+            {meta?.agentType === undefined ? '' : ` · ${meta.agentType}`}
           </SheetDescription>
           {models.length === 0 ? null : (
             <div className='flex flex-wrap items-center gap-1.5'>
