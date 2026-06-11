@@ -3,6 +3,7 @@ import { createRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 
 import { RouteError } from './routes/-root/route-error';
+import { RouteNotFound } from './routes/-root/route-not-found';
 import { routeTree } from './routeTree.gen';
 
 export const getRouter = () => {
@@ -25,6 +26,7 @@ export const getRouter = () => {
     context: { queryClient },
     defaultPreload: 'intent',
     defaultErrorComponent: RouteError,
+    defaultNotFoundComponent: RouteNotFound,
     scrollRestoration: true,
   });
 
