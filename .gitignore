@@ -149,3 +149,6 @@ worker-configuration.d.ts
 
 # pnpm store
 .pnpm-store/
+
+# tanstack
+.tanstack/
