@@ -120,10 +120,58 @@ const FallbackBody = ({ input }: { input: unknown }) => {
 const SEARCH_TOOLS = new Set(['Grep', 'Glob']);
 const AGENT_TOOLS = new Set(['Agent', 'Task']);
 
-export const ToolInputBody = ({ name, input }: { name: string; input: unknown }) => {
+/** One parse per tool row — the header summary, model badge, body, and result renderer all branch on this. */
+export type ParsedToolInput =
+  | { tool: 'bash'; data: z.infer<typeof bashSchema> }
+  | { tool: 'agent'; data: z.infer<typeof agentSchema> }
+  | { tool: 'edit'; data: z.infer<typeof editSchema> }
+  | { tool: 'write'; data: z.infer<typeof writeSchema> }
+  | { tool: 'read'; data: z.infer<typeof filePathSchema> }
+  | { tool: 'search'; data: z.infer<typeof searchSchema> }
+  | { tool: 'skill'; data: z.infer<typeof skillSchema> }
+  | { tool: 'web-fetch'; data: z.infer<typeof webFetchSchema> }
+  | { tool: 'web-search'; data: z.infer<typeof webSearchSchema> }
+  | { tool: 'todo-write'; data: z.infer<typeof todoWriteSchema> }
+  | { tool: 'unknown'; input: unknown };
+
+export const parseToolInput = (name: string, input: unknown): ParsedToolInput => {
   if (name === 'Bash') {
     const parsed = bashSchema.safeParse(input);
-    if (parsed.success) {
+    if (parsed.success) return { tool: 'bash', data: parsed.data };
+  } else if (AGENT_TOOLS.has(name)) {
+    const parsed = agentSchema.safeParse(input);
+    if (parsed.success) return { tool: 'agent', data: parsed.data };
+  } else if (name === 'Edit') {
+    const parsed = editSchema.safeParse(input);
+    if (parsed.success) return { tool: 'edit', data: parsed.data };
+  } else if (name === 'Write') {
+    const parsed = writeSchema.safeParse(input);
+    if (parsed.success) return { tool: 'write', data: parsed.data };
+  } else if (name === 'Read') {
+    const parsed = filePathSchema.safeParse(input);
+    if (parsed.success) return { tool: 'read', data: parsed.data };
+  } else if (SEARCH_TOOLS.has(name)) {
+    const parsed = searchSchema.safeParse(input);
+    if (parsed.success) return { tool: 'search', data: parsed.data };
+  } else if (name === 'Skill') {
+    const parsed = skillSchema.safeParse(input);
+    if (parsed.success) return { tool: 'skill', data: parsed.data };
+  } else if (name === 'WebFetch') {
+    const parsed = webFetchSchema.safeParse(input);
+    if (parsed.success) return { tool: 'web-fetch', data: parsed.data };
+  } else if (name === 'WebSearch') {
+    const parsed = webSearchSchema.safeParse(input);
+    if (parsed.success) return { tool: 'web-search', data: parsed.data };
+  } else if (name === 'TodoWrite') {
+    const parsed = todoWriteSchema.safeParse(input);
+    if (parsed.success) return { tool: 'todo-write', data: parsed.data };
+  }
+  return { tool: 'unknown', input };
+};
+
+export const ToolInputBody = ({ parsed }: { parsed: ParsedToolInput }) => {
+  switch (parsed.tool) {
+    case 'bash':
       // The description already heads the card via toolSummary.
       return (
         <div className='flex flex-col gap-1.5'>
@@ -131,19 +179,11 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
           {parsed.data.run_in_background === true ? <p className='text-muted-foreground text-[10px]'>runs in background</p> : null}
         </div>
       );
-    }
-  }
-  if (AGENT_TOOLS.has(name)) {
-    const parsed = agentSchema.safeParse(input);
-    if (parsed.success) return <AgentBody input={parsed.data} />;
-  }
-  if (name === 'Edit') {
-    const parsed = editSchema.safeParse(input);
-    if (parsed.success) return <EditBody input={parsed.data} />;
-  }
-  if (name === 'Write') {
-    const parsed = writeSchema.safeParse(input);
-    if (parsed.success) {
+    case 'agent':
+      return <AgentBody input={parsed.data} />;
+    case 'edit':
+      return <EditBody input={parsed.data} />;
+    case 'write':
       return (
         <div className='flex flex-col gap-1.5'>
           <MonoLine text={parsed.data.file_path} />
@@ -152,21 +192,14 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
           </Collapsible>
         </div>
       );
-    }
-  }
-  if (name === 'Read') {
-    const parsed = filePathSchema.safeParse(input);
-    if (parsed.success) {
+    case 'read': {
       const range =
         parsed.data.offset === undefined && parsed.data.limit === undefined
           ? ''
           : ` · lines ${String(parsed.data.offset ?? 1)}–${parsed.data.limit === undefined ? 'end' : String((parsed.data.offset ?? 1) + parsed.data.limit - 1)}`;
       return <MonoLine text={`${parsed.data.file_path}${range}`} />;
     }
-  }
-  if (SEARCH_TOOLS.has(name)) {
-    const parsed = searchSchema.safeParse(input);
-    if (parsed.success) {
+    case 'search': {
       const scope = [parsed.data.path, parsed.data.glob].filter(part => part !== undefined).join(' · ');
       return (
         <div className='flex flex-col gap-0.5'>
@@ -175,76 +208,50 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
         </div>
       );
     }
-  }
-  if (name === 'Skill') {
-    const parsed = skillSchema.safeParse(input);
-    if (parsed.success) {
+    case 'skill':
       return <MonoLine text={`/${parsed.data.skill}${parsed.data.args === undefined ? '' : ` ${parsed.data.args}`}`} />;
-    }
-  }
-  if (name === 'WebFetch') {
-    const parsed = webFetchSchema.safeParse(input);
-    if (parsed.success) {
+    case 'web-fetch':
       return (
         <div className='flex flex-col gap-0.5'>
           <MonoLine text={parsed.data.url} />
           {parsed.data.prompt === undefined ? null : <p className='text-muted-foreground text-xs'>{parsed.data.prompt}</p>}
         </div>
       );
-    }
+    case 'web-search':
+      return <MonoLine text={parsed.data.query} />;
+    case 'todo-write':
+      return <TodoListBody input={parsed.data} />;
+    case 'unknown':
+      return <FallbackBody input={parsed.input} />;
   }
-  if (name === 'WebSearch') {
-    const parsed = webSearchSchema.safeParse(input);
-    if (parsed.success) return <MonoLine text={parsed.data.query} />;
-  }
-  if (name === 'TodoWrite') {
-    const parsed = todoWriteSchema.safeParse(input);
-    if (parsed.success) return <TodoListBody input={parsed.data} />;
-  }
-  return <FallbackBody input={input} />;
 };
 
 /** Requested model of an Agent/Task call — shown as a badge in the card header. */
-export const toolModel = (name: string, input: unknown): string | undefined => {
-  if (!AGENT_TOOLS.has(name)) return undefined;
-  const parsed = agentSchema.safeParse(input);
-  return parsed.success ? parsed.data.model : undefined;
-};
+export const toolModel = (parsed: ParsedToolInput): string | undefined => (parsed.tool === 'agent' ? parsed.data.model : undefined);
 
 /** Short header summary shown next to the tool name while the card is scanned. */
-export const toolSummary = (name: string, input: unknown): string | undefined => {
-  if (name === 'Bash') {
-    const parsed = bashSchema.safeParse(input);
-    return parsed.success ? parsed.data.description : undefined;
+export const toolSummary = (parsed: ParsedToolInput): string | undefined => {
+  switch (parsed.tool) {
+    case 'bash':
+      return parsed.data.description;
+    case 'agent':
+      // The description heads the card body — surface the agent type up top.
+      return parsed.data.subagent_type;
+    case 'edit':
+    case 'write':
+    case 'read':
+      return parsed.data.file_path.split('/').at(-1);
+    case 'search':
+      return parsed.data.pattern;
+    case 'skill':
+      return `/${parsed.data.skill}`;
+    case 'web-fetch':
+      return parsed.data.url;
+    case 'web-search':
+      return parsed.data.query;
+    case 'todo-write':
+      return `${String(parsed.data.todos.length)} items`;
+    case 'unknown':
+      return undefined;
   }
-  if (AGENT_TOOLS.has(name)) {
-    const parsed = agentSchema.safeParse(input);
-    // The description heads the card body — surface the agent type up top.
-    return parsed.success ? parsed.data.subagent_type : undefined;
-  }
-  if (name === 'Read' || name === 'Write' || name === 'Edit') {
-    const parsed = filePathSchema.safeParse(input);
-    return parsed.success ? (parsed.data.file_path.split('/').at(-1) ?? undefined) : undefined;
-  }
-  if (SEARCH_TOOLS.has(name)) {
-    const parsed = searchSchema.safeParse(input);
-    return parsed.success ? parsed.data.pattern : undefined;
-  }
-  if (name === 'Skill') {
-    const parsed = skillSchema.safeParse(input);
-    return parsed.success ? `/${parsed.data.skill}` : undefined;
-  }
-  if (name === 'WebSearch') {
-    const parsed = webSearchSchema.safeParse(input);
-    return parsed.success ? parsed.data.query : undefined;
-  }
-  if (name === 'WebFetch') {
-    const parsed = webFetchSchema.safeParse(input);
-    return parsed.success ? parsed.data.url : undefined;
-  }
-  if (name === 'TodoWrite') {
-    const parsed = todoWriteSchema.safeParse(input);
-    return parsed.success ? `${String(parsed.data.todos.length)} items` : undefined;
-  }
-  return undefined;
 };

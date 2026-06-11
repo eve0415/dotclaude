@@ -7,7 +7,7 @@ import { Badge } from '@dotclaude/ui/components/badge';
 import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
 import { BookOpen, Bot, Brain, Info, MessageSquareWarning, SquareSlash, SquareTerminal, User, Wrench } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { formatLineCount, formatOffset, formatTokens } from '#lib/format';
 
@@ -15,7 +15,7 @@ import { MarkdownBlock, markdownClasses } from '../../-shared/markdown-block';
 import { ModelBadge } from '../../-shared/model-badge';
 
 import { Collapsible, TruncatedPre } from './primitives';
-import { ToolInputBody, toolModel, toolSummary } from './tool-input';
+import { ToolInputBody, parseToolInput, toolModel, toolSummary } from './tool-input';
 import { ToolResultBody } from './tool-result';
 import { ImageAttachment, ImageRefChip } from './transcript-image';
 
@@ -39,8 +39,9 @@ const ToolRowView = ({
   const openAgent = useCallback(() => {
     onOpenAgent?.(row.toolUseId);
   }, [onOpenAgent, row.toolUseId]);
-  const summary = toolSummary(row.name, row.input);
-  const model = toolModel(row.name, row.input);
+  const parsed = useMemo(() => parseToolInput(row.name, row.input), [row.name, row.input]);
+  const summary = toolSummary(parsed);
+  const model = toolModel(parsed);
   const canOpenAgent = agentForToolUse !== undefined && onOpenAgent !== undefined;
   return (
     <div className='flex gap-3 py-1'>
@@ -63,11 +64,11 @@ const ToolRowView = ({
           )}
         </div>
         <div className='flex flex-col gap-3 p-3'>
-          <ToolInputBody name={row.name} input={row.input} />
+          <ToolInputBody parsed={parsed} />
           {row.result === undefined || row.result === '' ? null : (
             <div className='border-border/60 border-t pt-2'>
               <Collapsible summary={<span>result · {formatLineCount(row.result.split('\n').length)}</span>}>
-                <ToolResultBody name={row.name} input={row.input} result={row.result} />
+                <ToolResultBody parsed={parsed} result={row.result} />
               </Collapsible>
             </div>
           )}

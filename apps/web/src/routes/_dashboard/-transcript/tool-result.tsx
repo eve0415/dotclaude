@@ -1,5 +1,6 @@
+import type { ParsedToolInput } from './tool-input';
+
 import { useMemo } from 'react';
-import { z } from 'zod';
 
 import { langFromPath } from '#lib/highlight';
 
@@ -13,8 +14,6 @@ import { TruncatedPre } from './primitives';
  * line numbers and get syntax color from the input's file path; Skill results
  * are the skill's markdown body. Everything else stays a plain pre.
  */
-
-const readInputSchema = z.looseObject({ file_path: z.string() });
 
 const NUMBERED_LINE = /^\s*(\d+)\t/;
 
@@ -57,12 +56,11 @@ const ReadResultBody = ({ filePath, result }: { filePath: string; result: string
   );
 };
 
-export const ToolResultBody = ({ name, input, result }: { name: string; input: unknown; result: string }) => {
-  if (name === 'Read') {
-    const parsed = readInputSchema.safeParse(input);
-    if (parsed.success) return <ReadResultBody filePath={parsed.data.file_path} result={result} />;
+export const ToolResultBody = ({ parsed, result }: { parsed: ParsedToolInput; result: string }) => {
+  if (parsed.tool === 'read') {
+    return <ReadResultBody filePath={parsed.data.file_path} result={result} />;
   }
-  if (name === 'Skill') {
+  if (parsed.tool === 'skill') {
     return (
       <div className={`${markdownClasses} max-h-[32rem] overflow-auto`}>
         <MarkdownBlock markdown={result} />
