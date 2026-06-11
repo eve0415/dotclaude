@@ -36,6 +36,7 @@ const LANG_LOADERS = {
   kotlin: () => import('@shikijs/langs/kotlin'),
   java: () => import('@shikijs/langs/java'),
   ruby: () => import('@shikijs/langs/ruby'),
+  diff: () => import('@shikijs/langs/diff'),
 } satisfies Record<string, () => Promise<unknown>>;
 
 export type HighlightLang = keyof typeof LANG_LOADERS;
@@ -73,6 +74,11 @@ const EXTENSION_LANG: Record<string, HighlightLang> = {
   kt: 'kotlin',
   java: 'java',
   rb: 'ruby',
+  diff: 'diff',
+  patch: 'diff',
+  // Fence-info aliases that aren't file extensions.
+  golang: 'go',
+  shell: 'shellscript',
 };
 
 /** Pick a highlight language from a file path; undefined means render plain. */
@@ -80,6 +86,15 @@ export const langFromPath = (filePath: string): HighlightLang | undefined => {
   const name = filePath.split('/').at(-1) ?? '';
   const ext = name.includes('.') ? (name.split('.').at(-1)?.toLowerCase() ?? '') : '';
   return EXTENSION_LANG[ext];
+};
+
+const isHighlightLang = (value: string): value is HighlightLang => value in LANG_LOADERS;
+
+/** Resolve a markdown fence info string (```ts, ```bash …) to a language. */
+export const langFromAlias = (alias: string): HighlightLang | undefined => {
+  const lower = alias.toLowerCase();
+  if (isHighlightLang(lower)) return lower;
+  return EXTENSION_LANG[lower];
 };
 
 /** Above these sizes highlighting costs more than it helps — render plain. */

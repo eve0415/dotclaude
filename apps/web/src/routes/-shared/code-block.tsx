@@ -9,7 +9,7 @@ import { tokenColorClass, useHighlightTokens } from '#lib/highlight';
 
 const COLLAPSED_LINES = 24;
 
-const LineTokens = ({ tokens }: { tokens: ThemedToken[] }) => (
+export const LineTokens = ({ tokens }: { tokens: ThemedToken[] }) => (
   <>
     {tokens.map((token, i) => {
       const colorClass = tokenColorClass(token.color);
@@ -34,6 +34,7 @@ export const CodeBlock = ({
   lang,
   label,
   showLineNumbers = false,
+  startLine = 1,
   flat = false,
   className,
 }: {
@@ -41,6 +42,8 @@ export const CodeBlock = ({
   lang: HighlightLang | undefined;
   label: string;
   showLineNumbers?: boolean;
+  /** First gutter number — Read results start at their offset, not 1. */
+  startLine?: number;
   flat?: boolean;
   className?: string;
 }) => {
@@ -53,7 +56,7 @@ export const CodeBlock = ({
   const lines = useMemo(() => code.split('\n'), [code]);
   const truncated = !showAll && lines.length > COLLAPSED_LINES;
   const visibleCount = truncated ? COLLAPSED_LINES : lines.length;
-  const gutterStyle = useMemo(() => ({ minWidth: `${String(String(lines.length).length)}ch` }), [lines.length]);
+  const gutterStyle = useMemo(() => ({ minWidth: `${String(String(startLine + lines.length - 1).length)}ch` }), [lines.length, startLine]);
 
   return (
     <div className='min-w-0'>
@@ -63,7 +66,7 @@ export const CodeBlock = ({
             <span key={i} className='flex min-h-[1lh]'>
               {showLineNumbers ? (
                 <span aria-hidden className='text-muted-foreground/60 mr-3 shrink-0 text-right tabular-nums select-none' style={gutterStyle}>
-                  {i + 1}
+                  {startLine + i}
                 </span>
               ) : null}
               <span className='min-w-0 flex-1 break-all whitespace-pre-wrap'>{tokens?.[i] ? <LineTokens tokens={tokens[i]} /> : line}</span>
