@@ -34,13 +34,21 @@ class ParseWorkerClient {
     // Without this, a worker that fails to load (bundling error, CSP block) would
     // leave every in-flight promise pending forever and the UI stuck on spinners.
     worker.addEventListener('error', event => {
-      const error = new Error(event.message === '' ? 'Parse worker failed to start' : event.message);
-      for (const pending of this.#pending.values()) pending.reject(error);
-      this.#pending.clear();
-      worker.terminate();
-      this.#worker = undefined;
+      this.#failAll(worker, event.message === '' ? 'Parse worker failed to start' : event.message);
+    });
+    // A response that can't be structured-cloned back has the same hang-forever failure mode.
+    worker.addEventListener('messageerror', () => {
+      this.#failAll(worker, 'Parse worker response could not be deserialized');
     });
     return worker;
+  }
+
+  #failAll(worker: Worker, message: string): void {
+    const error = new Error(message);
+    for (const pending of this.#pending.values()) pending.reject(error);
+    this.#pending.clear();
+    worker.terminate();
+    this.#worker = undefined;
   }
 
   #request(op: WorkerOp, onProgress?: (done: number, total: number) => void): Promise<WorkerResult> {
