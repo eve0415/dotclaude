@@ -44,7 +44,7 @@ The full experience (persistent directory handle, one-click reconnect, rescan) n
 ## Privacy
 
 - No telemetry, no analytics, no cookies.
-- The only network requests are for the app itself and the Geist font stylesheet.
+- The only network requests are for the app itself — fonts are bundled, and the production CSP (`connect-src 'self'`) blocks anything else.
 - Directory access is requested read-only; the persisted handle lives in your browser's IndexedDB and can be cleared with "Disconnect".
 
 ## License
