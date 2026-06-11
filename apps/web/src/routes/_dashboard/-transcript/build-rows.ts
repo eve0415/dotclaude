@@ -49,11 +49,21 @@ export interface ToolRow extends BaseRow {
 
 export interface MetaRow extends BaseRow {
   kind: 'meta';
+  /** Drives icon + tone; new sources should add a variant instead of reusing 'other'. */
+  variant: 'caveat' | 'reminder' | 'context' | 'system' | 'other';
   label: string;
   detail: string | undefined;
 }
 
-export type TranscriptRow = UserRow | AssistantTextRow | ThinkingRow | ToolRow | MetaRow;
+/** A slash-command invocation (`<command-name>` user record), with its stdout merged in. */
+export interface CommandRow extends BaseRow {
+  kind: 'command';
+  name: string;
+  args: string | undefined;
+  stdout: string | undefined;
+}
+
+export type TranscriptRow = UserRow | AssistantTextRow | ThinkingRow | ToolRow | MetaRow | CommandRow;
 
 /** tool_result content is a string or an array of text blocks — flatten for display. */
 export const toolResultText = (content?: unknown): string => {
@@ -70,6 +80,52 @@ export const toolResultText = (content?: unknown): string => {
   return JSON.stringify(content, null, 2);
 };
 
+/** Extract the text inside one `<tag>…</tag>` pair, or undefined when absent. */
+const tagContent = (text: string, tag: string): string | undefined => {
+  const open = `<${tag}>`;
+  const start = text.indexOf(open);
+  if (start === -1) return undefined;
+  const end = text.indexOf(`</${tag}>`, start + open.length);
+  if (end === -1) return undefined;
+  return text.slice(start + open.length, end);
+};
+
+/**
+ * Classify a string-content user record into its semantic row. Claude Code
+ * encodes local commands and injected context as XML-ish wrappers inside
+ * ordinary user messages — surfacing them raw is unreadable.
+ */
+const classifyUserText = (
+  base: { timestamp: string | undefined; offsetMs: number | undefined },
+  id: string,
+  text: string,
+  isMeta: boolean,
+): TranscriptRow | undefined => {
+  const commandName = tagContent(text, 'command-name');
+  if (commandName !== undefined) {
+    const args = tagContent(text, 'command-args')?.trim();
+    return { ...base, id, kind: 'command', name: commandName.trim(), args: args === '' ? undefined : args, stdout: undefined };
+  }
+  const stdout = tagContent(text, 'local-command-stdout');
+  if (stdout !== undefined) {
+    // Returned to the caller, which merges it into the preceding command row.
+    return { ...base, id, kind: 'meta', variant: 'system', label: 'command output', detail: stdout.trim() === '' ? undefined : stdout };
+  }
+  const caveat = tagContent(text, 'local-command-caveat');
+  if (caveat !== undefined) {
+    return { ...base, id, kind: 'meta', variant: 'caveat', label: 'caveat', detail: caveat };
+  }
+  const reminder = tagContent(text, 'system-reminder');
+  if (reminder !== undefined && isMeta) {
+    return { ...base, id, kind: 'meta', variant: 'reminder', label: 'system reminder', detail: reminder.trim() };
+  }
+  if (isMeta) {
+    return { ...base, id, kind: 'meta', variant: 'context', label: 'injected context', detail: text };
+  }
+  if (text.trim() === '') return undefined;
+  return { ...base, id, kind: 'user', text };
+};
+
 const userText = (content: string | { type: string }[]): string => {
   if (typeof content === 'string') return content;
   const parts: string[] = [];
@@ -82,6 +138,7 @@ const userText = (content: string | { type: string }[]): string => {
 export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
   const rows: TranscriptRow[] = [];
   const toolRowByUseId = new Map<string, ToolRow>();
+  let lastCommandRow: CommandRow | undefined;
   let startTime: number | undefined;
 
   const offsetOf = (timestamp: string | undefined): number | undefined => {
@@ -114,12 +171,18 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
         if (text.trim() !== '') rows.push({ ...base, id: `r${recordIndex}`, kind: 'user', text });
         continue;
       }
-      const text = record.message.content;
-      if (record.isMeta === true) {
-        rows.push({ ...base, id: `r${recordIndex}`, kind: 'meta', label: 'injected context', detail: text });
-      } else if (text.trim() !== '') {
-        rows.push({ ...base, id: `r${recordIndex}`, kind: 'user', text });
+      const row = classifyUserText(base, `r${recordIndex}`, record.message.content, record.isMeta === true);
+      if (row === undefined) continue;
+      // Local-command stdout arrives as its own record right after the
+      // invocation — fold it into the command row so they read as one event.
+      if (row.kind === 'meta' && row.label === 'command output' && lastCommandRow !== undefined) {
+        lastCommandRow.stdout = row.detail;
+        lastCommandRow = undefined;
+        continue;
       }
+      if (row.kind === 'command') lastCommandRow = row;
+      else if (row.kind === 'user') lastCommandRow = undefined;
+      rows.push(row);
       continue;
     }
 
@@ -162,7 +225,15 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
     }
 
     if (record.type === 'system' && 'content' in record && typeof record.content === 'string' && record.content !== '') {
-      rows.push({ ...base, id: `r${recordIndex}`, kind: 'meta', label: 'system', detail: record.content });
+      const stdout = tagContent(record.content, 'local-command-stdout');
+      if (stdout !== undefined && lastCommandRow !== undefined) {
+        lastCommandRow.stdout = stdout.trim() === '' ? undefined : stdout;
+        lastCommandRow = undefined;
+        continue;
+      }
+      const subtype = 'subtype' in record && typeof record.subtype === 'string' ? record.subtype.replaceAll('_', ' ') : 'system';
+      const detail = stdout === undefined ? record.content : stdout.trim() === '' ? undefined : stdout;
+      rows.push({ ...base, id: `r${recordIndex}`, kind: 'meta', variant: 'system', label: subtype, detail });
     }
   }
 
@@ -187,6 +258,9 @@ export const rowMatches = (row: TranscriptRow, needle: string): boolean => {
       break;
     case 'meta':
       haystacks.push(row.label, row.detail ?? '');
+      break;
+    case 'command':
+      haystacks.push(row.name, row.args ?? '', row.stdout ?? '');
       break;
   }
   return haystacks.some(h => h.toLowerCase().includes(needle));

@@ -1,81 +1,31 @@
 import type { TranscriptRow } from './build-rows';
+import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { usageToTotals } from '@dotclaude/schemas/usage';
 import { Badge } from '@dotclaude/ui/components/badge';
 import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
-import { Bot, Brain, ChevronDown, Info, User, Wrench } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { Bot, Brain, Info, MessageSquareWarning, SquareSlash, SquareTerminal, User, Wrench } from 'lucide-react';
+import { useCallback } from 'react';
 
-import { formatOffset, formatTokens } from '#lib/format';
+import { formatLineCount, formatOffset, formatTokens } from '#lib/format';
 
 import { MarkdownBlock } from '../../-shared/markdown-block';
 import { ModelBadge } from '../../-shared/model-badge';
 
-const COLLAPSED_RESULT_LINES = 24;
+import { Collapsible, TruncatedPre } from './primitives';
+import { ToolInputBody, toolSummary } from './tool-input';
 
 const Gutter = ({ offsetMs, icon }: { offsetMs: number | undefined; icon: ReactNode }) => (
-  <div aria-hidden className='flex w-20 shrink-0 flex-col items-end gap-1 pt-1'>
-    <span className='text-muted-foreground/70 font-mono text-[10px] tabular-nums'>{offsetMs === undefined ? '' : formatOffset(offsetMs)}</span>
+  <div aria-hidden className='flex w-14 shrink-0 flex-col items-end gap-1 pt-1 sm:w-20'>
+    <span className='text-muted-foreground font-mono text-[10px] tabular-nums'>{offsetMs === undefined ? '' : formatOffset(offsetMs)}</span>
     <span className='text-muted-foreground/50'>{icon}</span>
   </div>
 );
 
 const markdownClasses =
   'max-w-none text-sm leading-relaxed break-words [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_h1]:mt-3 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:mt-3 [&_h2]:text-sm [&_h2]:font-semibold [&_h3]:mt-2 [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-2 [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:my-2 [&_table]:text-xs [&_td]:border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:px-2 [&_th]:py-1 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5';
-
-const Collapsible = ({ summary, children, defaultOpen = false }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) => {
-  const [open, setOpen] = useState(defaultOpen);
-  const toggle = useCallback(() => {
-    setOpen(value => !value);
-  }, []);
-  return (
-    <div>
-      <button
-        type='button'
-        aria-expanded={open}
-        onClick={toggle}
-        className='text-muted-foreground hover:text-foreground flex w-full items-center gap-1.5 text-left text-xs'
-      >
-        <ChevronDown aria-hidden className={cn('size-3.5 transition-transform', !open && '-rotate-90')} />
-        {summary}
-      </button>
-      {open ? <div className='mt-2'>{children}</div> : null}
-    </div>
-  );
-};
-
-const TruncatedPre = ({ text, label, flat = false }: { text: string; label: string; flat?: boolean }) => {
-  const [showAll, setShowAll] = useState(false);
-  const expand = useCallback(() => {
-    setShowAll(true);
-  }, []);
-  const lines = text.split('\n');
-  const truncated = !showAll && lines.length > COLLAPSED_RESULT_LINES;
-  const visible = truncated ? lines.slice(0, COLLAPSED_RESULT_LINES).join('\n') : text;
-  return (
-    <div>
-      <pre className={cn('max-h-[32rem] overflow-auto font-mono text-xs leading-relaxed whitespace-pre-wrap', flat ? 'p-0' : 'bg-muted/60 rounded-md p-3')}>
-        {visible}
-      </pre>
-      {truncated ? (
-        <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
-          Show all {lines.length} lines of {label}
-        </Button>
-      ) : null}
-    </div>
-  );
-};
-
-const formatInput = (input: unknown): string => {
-  if (typeof input === 'object' && input !== null) {
-    // The common single-field tools read better unwrapped.
-    if ('command' in input && typeof input.command === 'string' && Object.keys(input).length <= 2) return input.command;
-    if ('file_path' in input && typeof input.file_path === 'string' && Object.keys(input).length === 1) return input.file_path;
-  }
-  return JSON.stringify(input, null, 2);
-};
 
 const ToolRowView = ({
   row,
@@ -90,25 +40,27 @@ const ToolRowView = ({
   const openAgent = useCallback(() => {
     onOpenAgent?.(row.toolUseId);
   }, [onOpenAgent, row.toolUseId]);
+  const summary = toolSummary(row.name, row.input);
   return (
     <div className='flex gap-3 py-1'>
       <Gutter offsetMs={row.offsetMs} icon={<Wrench className='size-3.5' />} />
       <div className='border-border bg-card min-w-0 flex-1 overflow-hidden rounded-lg border'>
         <div className='border-border/60 bg-muted/40 flex items-center gap-2 border-b px-3 py-1.5'>
-          <span aria-hidden className={cn('size-2 rounded-full', statusColor)} />
+          <span aria-hidden className={cn('size-2 shrink-0 rounded-full', statusColor)} />
           <span className='sr-only'>{row.result === undefined ? 'no result recorded' : row.isError ? 'failed' : 'succeeded'}</span>
-          <span className='font-mono text-xs font-medium'>{row.name}</span>
+          <span className='shrink-0 font-mono text-xs font-medium'>{row.name}</span>
+          {summary === undefined ? null : <span className='text-muted-foreground min-w-0 truncate text-xs'>{summary}</span>}
           {agentForToolUse === undefined || onOpenAgent === undefined ? null : (
-            <Button variant='outline' size='sm' className='ml-auto h-6 text-xs' onClick={openAgent}>
+            <Button variant='outline' size='sm' className='ml-auto h-6 shrink-0 text-xs' onClick={openAgent}>
               ↳ open subagent
             </Button>
           )}
         </div>
         <div className='flex flex-col gap-3 p-3'>
-          <TruncatedPre flat text={formatInput(row.input)} label='input' />
+          <ToolInputBody name={row.name} input={row.input} />
           {row.result === undefined || row.result === '' ? null : (
             <div className='border-border/60 border-t pt-2'>
-              <Collapsible summary={<span>result · {row.result.split('\n').length} lines</span>}>
+              <Collapsible summary={<span>result · {formatLineCount(row.result.split('\n').length)}</span>}>
                 <TruncatedPre flat text={row.result} label='result' />
               </Collapsible>
             </div>
@@ -118,6 +70,85 @@ const ToolRowView = ({
     </div>
   );
 };
+
+const META_ICONS: Record<Extract<TranscriptRow, { kind: 'meta' }>['variant'], LucideIcon> = {
+  caveat: MessageSquareWarning,
+  reminder: Info,
+  context: Info,
+  system: SquareTerminal,
+  other: Info,
+};
+
+/** First meaningful line of the detail, for the collapsed summary. */
+const metaPreview = (detail: string | undefined): string => {
+  if (detail === undefined) return '';
+  for (const line of detail.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed !== '') return trimmed;
+  }
+  return '';
+};
+
+const MetaRowView = ({ row }: { row: Extract<TranscriptRow, { kind: 'meta' }> }) => {
+  const Icon = META_ICONS[row.variant];
+  return (
+    <div className='flex gap-3 py-0.5'>
+      <Gutter offsetMs={row.offsetMs} icon={<Icon className='size-3.5' />} />
+      <div className='min-w-0 flex-1 px-1'>
+        {row.detail === undefined || row.detail.trim() === '' ? (
+          <p className='text-muted-foreground flex items-center gap-1.5 py-0.5 text-xs'>
+            <Badge variant='outline' className='text-muted-foreground shrink-0 text-[10px]'>
+              {row.label}
+            </Badge>
+            <span className='italic'>empty</span>
+          </p>
+        ) : (
+          <Collapsible
+            summary={
+              <span className='flex min-w-0 flex-1 items-center gap-1.5'>
+                <Badge variant='outline' className='text-muted-foreground shrink-0 text-[10px]'>
+                  {row.label}
+                </Badge>
+                <span className='min-w-0 truncate'>{metaPreview(row.detail)}</span>
+              </span>
+            }
+          >
+            <div className='border-border/60 bg-muted/30 rounded-md border-l-2 px-3 py-2'>
+              <TruncatedPre flat text={row.detail} label={row.label} className='text-muted-foreground' />
+            </div>
+          </Collapsible>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CommandRowView = ({ row }: { row: Extract<TranscriptRow, { kind: 'command' }> }) => (
+  <div className='flex gap-3 py-1.5'>
+    <Gutter offsetMs={row.offsetMs} icon={<SquareSlash className='size-3.5' />} />
+    <div className='min-w-0 flex-1 px-1'>
+      <p className='flex min-w-0 items-baseline gap-2 text-xs'>
+        <span className='text-muted-foreground shrink-0'>ran</span>
+        <code className='bg-muted shrink-0 rounded px-1.5 py-0.5 font-mono font-medium'>{row.name}</code>
+        {row.args === undefined ? null : <span className='text-muted-foreground min-w-0 truncate font-mono'>{row.args}</span>}
+      </p>
+      {row.args !== undefined && row.args.length > 80 ? (
+        <div className='mt-1.5'>
+          <Collapsible summary={<span>full arguments</span>}>
+            <TruncatedPre flat text={row.args} label='arguments' className='text-muted-foreground' />
+          </Collapsible>
+        </div>
+      ) : null}
+      {row.stdout === undefined ? null : (
+        <div className='mt-1.5'>
+          <Collapsible summary={<span>output · {formatLineCount(row.stdout.split('\n').length)}</span>}>
+            <TruncatedPre text={row.stdout} label='output' />
+          </Collapsible>
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 interface TranscriptRowViewProps {
   row: TranscriptRow;
@@ -150,7 +181,7 @@ export const TranscriptRowView = ({ row, onOpenAgent, agentForToolUse }: Transcr
               <div className='mt-1 flex items-center gap-2'>
                 {row.model === undefined ? null : <ModelBadge model={row.model} />}
                 {row.usage === undefined ? null : (
-                  <span className='text-muted-foreground/70 font-mono text-[10px]'>
+                  <span className='text-muted-foreground font-mono text-[10px]'>
                     {formatTokens(usageToTotals(row.usage).outputTokens)} out · {formatTokens(usageToTotals(row.usage).cacheReadTokens)} cache read
                   </span>
                 )}
@@ -175,25 +206,10 @@ export const TranscriptRowView = ({ row, onOpenAgent, agentForToolUse }: Transcr
     case 'tool':
       return <ToolRowView row={row} onOpenAgent={onOpenAgent} agentForToolUse={agentForToolUse} />;
 
+    case 'command':
+      return <CommandRowView row={row} />;
+
     case 'meta':
-      return (
-        <div className='flex gap-3 py-1'>
-          <Gutter offsetMs={row.offsetMs} icon={<Info className='size-3.5' />} />
-          <div className='min-w-0 flex-1 px-1'>
-            <Collapsible
-              summary={
-                <span className='flex items-center gap-1.5'>
-                  <Badge variant='outline' className='text-[10px]'>
-                    {row.label}
-                  </Badge>
-                  <span className='truncate opacity-60'>{(row.detail ?? '').slice(0, 80)}</span>
-                </span>
-              }
-            >
-              <p className='text-muted-foreground text-xs break-words whitespace-pre-wrap'>{row.detail}</p>
-            </Collapsible>
-          </div>
-        </div>
-      );
+      return <MetaRowView row={row} />;
   }
 };

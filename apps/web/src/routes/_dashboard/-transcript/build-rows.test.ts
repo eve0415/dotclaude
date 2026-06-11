@@ -9,6 +9,16 @@ import { buildRows, rowMatches, toolResultText } from './build-rows';
 const toolRows = (rows: TranscriptRow[]) => rows.flatMap(r => (r.kind === 'tool' ? [r] : []));
 const assistantTextRows = (rows: TranscriptRow[]) => rows.flatMap(r => (r.kind === 'assistant-text' ? [r] : []));
 
+const commandRow = (row: TranscriptRow | undefined) => {
+  if (row?.kind !== 'command') throw new Error('expected a command row');
+  return row;
+};
+
+const metaRow = (row: TranscriptRow | undefined) => {
+  if (row?.kind !== 'meta') throw new Error('expected a meta row');
+  return row;
+};
+
 const parse = (value: object): TranscriptRecord => {
   const record = parseTranscriptLine(JSON.stringify(value));
   if (record === undefined) throw new Error('fixture did not parse');
@@ -61,6 +71,57 @@ describe('buildRows', () => {
     const rows = buildRows(records());
     const texts = assistantTextRows(rows);
     expect(texts.map(t => t.usage?.output_tokens)).toEqual([50]);
+  });
+});
+
+describe('user record classification', () => {
+  it('parses slash-command invocations and merges the following stdout record', () => {
+    const rows = buildRows([
+      parse({
+        type: 'user',
+        timestamp: '2026-06-10T01:00:00.000Z',
+        message: { role: 'user', content: '<command-name>/goal</command-name>\n<command-message>goal</command-message>\n<command-args>ship it</command-args>' },
+      }),
+      parse({
+        type: 'user',
+        timestamp: '2026-06-10T01:00:01.000Z',
+        message: { role: 'user', content: '<local-command-stdout>Goal set.</local-command-stdout>' },
+      }),
+    ]);
+    expect(rows).toHaveLength(1);
+    const row = commandRow(rows[0]);
+    expect(row.name).toBe('/goal');
+    expect(row.args).toBe('ship it');
+    expect(row.stdout).toBe('Goal set.');
+  });
+
+  it('keeps orphan stdout as a meta row and drops empty output', () => {
+    const rows = buildRows([parse({ type: 'user', message: { role: 'user', content: '<local-command-stdout></local-command-stdout>' } })]);
+    expect(rows.map(r => r.kind)).toEqual(['meta']);
+    expect(metaRow(rows[0]).detail).toBeUndefined();
+  });
+
+  it('classifies caveats, reminders, and generic injected context', () => {
+    const rows = buildRows([
+      parse({ type: 'user', isMeta: true, message: { role: 'user', content: '<local-command-caveat>careful</local-command-caveat>' } }),
+      parse({ type: 'user', isMeta: true, message: { role: 'user', content: '<system-reminder>remember</system-reminder>' } }),
+      parse({ type: 'user', isMeta: true, message: { role: 'user', content: 'plain injected context' } }),
+    ]);
+    expect(rows.map(r => metaRow(r).variant)).toEqual(['caveat', 'reminder', 'context']);
+  });
+
+  it('folds local_command system stdout into the preceding command row', () => {
+    const rows = buildRows([
+      parse({
+        type: 'user',
+        message: { role: 'user', content: '<command-name>/clear</command-name><command-message>clear</command-message><command-args></command-args>' },
+      }),
+      parse({ type: 'system', subtype: 'local_command', content: '<local-command-stdout>done</local-command-stdout>' }),
+    ]);
+    expect(rows).toHaveLength(1);
+    const row = commandRow(rows[0]);
+    expect(row.args).toBeUndefined();
+    expect(row.stdout).toBe('done');
   });
 });
 

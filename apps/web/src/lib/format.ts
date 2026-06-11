@@ -68,3 +68,5 @@ export const shortModelName = (model: string): string => {
   const [, family, major, minor] = match;
   return minor === undefined ? `${family} ${major}` : `${family} ${major}.${minor}`;
 };
+
+export const formatLineCount = (count: number): string => (count === 1 ? '1 line' : `${String(count)} lines`);
