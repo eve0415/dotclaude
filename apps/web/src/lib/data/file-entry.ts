@@ -13,15 +13,6 @@ export interface FileEntry {
   getFile: () => Promise<File>;
 }
 
-/** Placeholder for disabled queries that still need a structurally valid entry. */
-export const MISSING_FILE_ENTRY: FileEntry = {
-  path: '',
-  name: '',
-  size: 0,
-  lastModified: 0,
-  getFile: () => Promise.reject(new Error('missing file entry')),
-};
-
 /** Stable identity for cache keys: same path + size + mtime ⇒ same parsed result. */
 export const fileEntryKey = (entry: FileEntry): string => `${entry.path}:${entry.size}:${entry.lastModified}`;
 

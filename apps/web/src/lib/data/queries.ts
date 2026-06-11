@@ -4,7 +4,7 @@ import type { SessionSummary } from './worker-protocol';
 import type { MemoryFile } from '@dotclaude/schemas/memory';
 
 import { parseMemoryFile } from '@dotclaude/schemas/memory';
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, skipToken } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { fileEntryKey } from './file-entry';
@@ -16,10 +16,10 @@ import { parseWorker } from './worker-client';
  * writes re-parses exactly the files that changed.
  */
 
-export const sessionRecordsQuery = (entry: FileEntry) =>
+export const sessionRecordsQuery = (entry: FileEntry | undefined) =>
   queryOptions({
-    queryKey: ['session-records', fileEntryKey(entry)],
-    queryFn: async () => parseWorker.parseSession(await entry.getFile()),
+    queryKey: ['session-records', entry === undefined ? 'none' : fileEntryKey(entry)],
+    queryFn: entry === undefined ? skipToken : async () => parseWorker.parseSession(await entry.getFile()),
   });
 
 /**
@@ -61,14 +61,22 @@ const agentMetaSchema = z.looseObject({
 
 export type AgentMeta = z.infer<typeof agentMetaSchema>;
 
-export const agentMetaQuery = (entry: FileEntry) =>
+export const agentMetaQuery = (entry: FileEntry | undefined) =>
   queryOptions({
-    queryKey: ['agent-meta', fileEntryKey(entry)],
-    queryFn: async (): Promise<AgentMeta> => {
-      const file = await entry.getFile();
-      const result = agentMetaSchema.safeParse(JSON.parse(await file.text()));
-      return result.success ? result.data : {};
-    },
+    queryKey: ['agent-meta', entry === undefined ? 'none' : fileEntryKey(entry)],
+    queryFn:
+      entry === undefined
+        ? skipToken
+        : async (): Promise<AgentMeta> => {
+            // Meta files are optional sidecars — malformed JSON means "no metadata", not an error page.
+            try {
+              const file = await entry.getFile();
+              const result = agentMetaSchema.safeParse(JSON.parse(await file.text()));
+              return result.success ? result.data : {};
+            } catch {
+              return {};
+            }
+          },
   });
 
 export interface ProjectMemory {
@@ -88,8 +96,8 @@ export const projectMemoryQuery = (project: ProjectRef) =>
       ),
   });
 
-export const historyQuery = (entry: FileEntry) =>
+export const historyQuery = (entry: FileEntry | undefined) =>
   queryOptions({
-    queryKey: ['history', fileEntryKey(entry)],
-    queryFn: async () => parseWorker.parseHistory(await entry.getFile()),
+    queryKey: ['history', entry === undefined ? 'none' : fileEntryKey(entry)],
+    queryFn: entry === undefined ? skipToken : async () => parseWorker.parseHistory(await entry.getFile()),
   });

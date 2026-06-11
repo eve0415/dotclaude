@@ -15,7 +15,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
 import { useDataSource } from '#lib/data/data-source';
-import { MISSING_FILE_ENTRY } from '#lib/data/file-entry';
 import { agentMetaQuery, sessionRecordsQuery } from '#lib/data/queries';
 import { formatDateTime, formatDuration, formatTokens, formatUsd } from '#lib/format';
 
@@ -79,11 +78,11 @@ const AgentDrawer = ({
 }) => {
   const agentId = path.at(-1) ?? '';
   const agent = session.agents.find(a => a.agentId === agentId);
-  const records = useQuery({ ...sessionRecordsQuery(agent?.entry ?? MISSING_FILE_ENTRY), enabled: agent !== undefined });
-  const meta = useQuery({ ...agentMetaQuery(agent?.metaEntry ?? MISSING_FILE_ENTRY), enabled: agent?.metaEntry !== undefined });
+  const records = useQuery(sessionRecordsQuery(agent?.entry));
+  const meta = useQuery(agentMetaQuery(agent?.metaEntry));
   const pathAgents = useMemo(() => path.map(id => session.agents.find(a => a.agentId === id)), [path, session.agents]);
   const crumbMetas = useQueries({
-    queries: pathAgents.map(a => agentMetaQuery(a?.metaEntry ?? MISSING_FILE_ENTRY)),
+    queries: pathAgents.map(a => agentMetaQuery(a?.metaEntry)),
     combine: results => results.map(result => result.data),
   });
   const rows = useMemo(() => buildRows(records.data ?? []), [records.data]);
@@ -161,7 +160,7 @@ const AgentDrawer = ({
 const useAgentMap = (agents: AgentFileRef[]): ReadonlyMap<string, string> => {
   const withMeta = useMemo(() => agents.filter(agent => agent.metaEntry !== undefined), [agents]);
   const metaQueries = useQueries({
-    queries: withMeta.map(agent => agentMetaQuery(agent.metaEntry ?? agent.entry)),
+    queries: withMeta.map(agent => agentMetaQuery(agent.metaEntry)),
     combine: results => results.map(result => result.data),
   });
   return useMemo(() => {
@@ -230,7 +229,7 @@ const SessionDetail = () => {
   const [filters, setFilters] = useState<RowFilters>({ thinking: true, tools: true, meta: false });
 
   const found = findSession(index, sessionId);
-  const records = useQuery({ ...sessionRecordsQuery(found?.session.entry ?? MISSING_FILE_ENTRY), enabled: found !== undefined });
+  const records = useQuery(sessionRecordsQuery(found?.session.entry));
   const agentsByToolUse = useAgentMap(found?.session.agents ?? []);
   const summary = useMemo(() => (records.data === undefined ? undefined : summarizeSession(records.data)), [records.data]);
 
