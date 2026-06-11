@@ -40,9 +40,9 @@ export const formatOffset = (ms: number): string => {
   return `+${hours}h ${`${minutes % 60}`.padStart(2, '0')}m`;
 };
 
-export const formatDateTime = (iso: string | undefined): string => {
-  if (iso === undefined) return '—';
-  const date = new Date(iso);
+export const formatDateTime = (timestamp: number | string | undefined): string => {
+  if (timestamp === undefined) return '—';
+  const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 };

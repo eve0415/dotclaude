@@ -2,10 +2,9 @@ import { Input } from '@dotclaude/ui/components/input';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
 
 import { useDataSource } from '#lib/data/data-source';
-import { MISSING_FILE_ENTRY } from '#lib/data/file-entry';
 import { historyQuery } from '#lib/data/queries';
 import { formatDateTime } from '#lib/format';
 
@@ -14,20 +13,28 @@ import { VirtualItem, useTotalSizeStyle } from '../-shared/virtual-item';
 const HistoryPage = () => {
   const { index } = useDataSource();
   const historyEntry = index?.historyEntry;
-  const query = useQuery({ ...historyQuery(historyEntry ?? MISSING_FILE_ENTRY), enabled: historyEntry !== undefined });
+  const query = useQuery(historyQuery(historyEntry));
   const [filter, setFilter] = useState('');
+  const deferredFilter = useDeferredValue(filter);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const onFilterChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setFilter(event.target.value);
   }, []);
 
+  // Sort once per dataset, with lowercased haystacks; the per-keystroke memo only filters.
+  const sorted = useMemo(
+    () =>
+      [...(query.data ?? [])]
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .map(entry => ({ entry, haystack: `${entry.display}\n${entry.project ?? ''}`.toLowerCase() })),
+    [query.data],
+  );
   const entries = useMemo(() => {
-    const all = [...(query.data ?? [])].sort((a, b) => b.timestamp - a.timestamp);
-    const needle = filter.trim().toLowerCase();
-    if (needle === '') return all;
-    return all.filter(entry => entry.display.toLowerCase().includes(needle) || (entry.project ?? '').toLowerCase().includes(needle));
-  }, [query.data, filter]);
+    const needle = deferredFilter.trim().toLowerCase();
+    const matched = needle === '' ? sorted : sorted.filter(item => item.haystack.includes(needle));
+    return matched.map(item => item.entry);
+  }, [sorted, deferredFilter]);
 
   const virtualizer = useVirtualizer({
     count: entries.length,
@@ -63,7 +70,7 @@ const HistoryPage = () => {
                 <div className='border-border/60 border-b px-4 py-2'>
                   <p className='truncate font-mono text-sm'>{entry.display}</p>
                   <p className='text-muted-foreground text-xs'>
-                    {entry.project ?? 'unknown project'} · {formatDateTime(new Date(entry.timestamp).toISOString())}
+                    {entry.project ?? 'unknown project'} · {formatDateTime(entry.timestamp)}
                   </p>
                 </div>
               </VirtualItem>
