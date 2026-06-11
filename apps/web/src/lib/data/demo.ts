@@ -130,11 +130,14 @@ const showcaseJsonl = (): string => {
     user(
       '<command-name>/goal</command-name>\n<command-message>goal</command-message>\n<command-args>Make webhook retries durable — exponential backoff, dead-letter queue, alerting. Verify with the integration suite.</command-args>',
     ),
-    user('<local-command-stdout>Goal set: durable webhook retries. Stop hook active.</local-command-stdout>'),
+    user('<local-command-stdout>Goal set: \u001B[1mdurable webhook retries\u001B[22m. Stop hook active.</local-command-stdout>'),
     user('<system-reminder>The TodoWrite tool can help track multi-step work. Use it when the task has more than two phases.</system-reminder>', {
       isMeta: true,
     }),
-    user('Webhook deliveries drop silently when Stripe is briefly unreachable. Make retries durable and observable.'),
+    user(
+      '[Image #1] Webhook deliveries drop silently when Stripe is briefly unreachable — this alert chart is from last night. Make retries durable and observable.',
+    ),
+    user(`[Image: source: /home/eve/.claude/image-cache/${SESSION_D}/1.png]`, { isMeta: true }),
     assistant(
       [
         {
@@ -409,8 +412,14 @@ const innerAgentJsonl = (): string => {
   ].join('');
 };
 
+/** 280×160 bar-chart screenshot stand-in so the demo exercises image attachments. */
+const DEMO_IMAGE_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAARgAAACgCAIAAABYAuR3AAACfElEQVR42u3Vsa2GIBiGUXYxsaCysHIPGmq3cRB3tLKmhoiBkzz9G/7Pc2/Yt0NSZcFPIIEkgSSBJAkkCSQJJAkkSSBJIEkgSSBJAkkCSQJJAkkSSBJIEkgSSJJAkrpAWpcoqTKQJJAkkCSQJIEkgSSBpKL7eprklwQJJJBAEkgCCSSBBBJIIAkkkASSQAJJIIEEEkgCCSSB5A8ESCB5F0gggQSSQAJJPjjvAgkk7wIJJJBAEkggyQfnXSCB5F0ggQQSSPLBgSQfnHeBBJJ3gQQSSCA5jHeBBJJ3eRdIPjjvAskH510gOYx3gQSSd3kXSD447wLJYXq8a9QtkEACCSSQQAIJJJBAAgkkkEACCSSQQAIJJJBAAgkkkEACCSSQQAIJJJBAAgkkkEACCSQfnC2QQLIFEkg+OJBA8sHZAgkkWyCBZMsWSD4CWyD5CGyBBJItkECyZQskH4EtkHwEtkACyRZIINmyBZKPwNYIkBzGFkgg2bIFki1bIDmMLZAcxhZIINmyBZItWyA5jC2QHMaWLZBs2QLJli2QHMYWSA5jyxZItmyBZMsWSA5jCySQbNkCyZYtkGzZAslhbIEEki1bINmyBZItWyA5jC2QQLJlCyRbtkByGFsgOYwtkECyZQskW7ZAchhbIDmMLZBAsmULJFu2QHIYWyA5jC1bINmyBZItWyA5jC2QHMaWLZBs2QLJli2QHMYWSCDZsgWSLVsg2bIFksPYAgkkW7ZAsmULJB+BLZAcxhZIINmyBZItWyA5jC2QHMYWSCDZsgWSLVsgOYwtkBzGFkiNIOV0SjP03X8kSSBJIEkgSSBJAkkCSQJJAkkSSBJI0t97AReA+vS33XaYAAAAAElFTkSuQmCC';
+
+const demoImageBytes = (): Uint8Array<ArrayBuffer> => Uint8Array.from(atob(DEMO_IMAGE_BASE64), char => char.codePointAt(0) ?? 0);
+
 const demoFiles = (): File[] => {
-  const files: [path: string, content: string, mtime: number][] = [
+  const files: [path: string, content: string | Uint8Array<ArrayBuffer>, mtime: number][] = [
     [
       `.claude/projects/-workspaces-aurora/${SESSION_A}.jsonl`,
       sessionJsonl(SESSION_A, '/workspaces/aurora', 'fix-flaky-auth-tests', 'claude-opus-4-6', BASE_TIME, [
@@ -497,6 +506,7 @@ const demoFiles = (): File[] => {
       BASE_TIME + DAY_MS * 4.3,
     ],
     [`.claude/projects/-workspaces-aurora/${SESSION_D}.jsonl`, showcaseJsonl(), BASE_TIME + DAY_MS * 5.2],
+    [`.claude/image-cache/${SESSION_D}/1.png`, demoImageBytes(), BASE_TIME + DAY_MS * 5.2],
     [`.claude/projects/-workspaces-aurora/${SESSION_D}/subagents/agent-${AGENT_OUTER}.jsonl`, outerAgentJsonl(), BASE_TIME + DAY_MS * 5.2],
     [
       `.claude/projects/-workspaces-aurora/${SESSION_D}/subagents/agent-${AGENT_OUTER}.meta.json`,
