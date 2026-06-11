@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import { openDemoSource } from './demo';
 import {
   clearPersistedDirectoryHandle,
   handlePermissionGranted,
@@ -25,6 +26,7 @@ interface DataSourceValue {
   openDirectoryFallback: () => Promise<boolean>;
   openFiles: () => Promise<boolean>;
   openDropped: (dataTransfer: DataTransfer) => Promise<boolean>;
+  openDemo: () => Promise<boolean>;
   restoreLast: () => Promise<boolean>;
   refresh: () => Promise<void>;
   close: () => Promise<void>;
@@ -57,6 +59,7 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
   const openDirectoryFallback = useCallback(async () => adopt(await openViaFileInput({ directory: true })), [adopt]);
   const openFiles = useCallback(async () => adopt(await openViaFileInput({ directory: false })), [adopt]);
   const openDropped = useCallback(async (dataTransfer: DataTransfer) => adopt(await openFromDataTransfer(dataTransfer)), [adopt]);
+  const openDemo = useCallback(async () => adopt(openDemoSource()), [adopt]);
 
   const restoreLast = useCallback(async () => {
     if (persistedHandle === undefined) return false;
@@ -90,11 +93,12 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
       openDirectoryFallback,
       openFiles,
       openDropped,
+      openDemo,
       restoreLast,
       refresh,
       close,
     }),
-    [source, index, persistedHandle, openDirectory, openDirectoryFallback, openFiles, openDropped, restoreLast, refresh, close],
+    [source, index, persistedHandle, openDirectory, openDirectoryFallback, openFiles, openDropped, openDemo, restoreLast, refresh, close],
   );
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;

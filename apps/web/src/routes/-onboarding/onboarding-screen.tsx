@@ -51,6 +51,9 @@ export const OnboardingScreen = ({ dataSource, error, runOpen }: OnboardingScree
   const onOpenFiles = useCallback(() => {
     void runOpen(dataSource.openFiles);
   }, [runOpen, dataSource.openFiles]);
+  const onOpenDemo = useCallback(() => {
+    void runOpen(dataSource.openDemo);
+  }, [runOpen, dataSource.openDemo]);
 
   const onDrop = useCallback(
     (event: DragEvent<HTMLElement>): void => {
@@ -164,6 +167,13 @@ export const OnboardingScreen = ({ dataSource, error, runOpen }: OnboardingScree
             </CardContent>
           </Card>
         </div>
+
+        <p className='text-muted-foreground mt-6 text-center text-sm'>
+          No data handy?{' '}
+          <Button variant='link' className='h-auto p-0 text-sm' onClick={onOpenDemo}>
+            Explore with demo data
+          </Button>
+        </p>
 
         {error === undefined ? null : (
           <p role='alert' className='text-destructive mt-4 text-sm'>

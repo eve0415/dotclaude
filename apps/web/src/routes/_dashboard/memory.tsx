@@ -66,7 +66,7 @@ const MemoryPage = () => {
   if (projectsWithMemory.length === 0) {
     return (
       <div className='py-16 text-center'>
-        <p className='text-sm font-medium'>No memories found</p>
+        <h1 className='text-sm font-medium'>No memories found</h1>
         <p className='text-muted-foreground mt-1 text-xs'>
           Memory files live in <span className='font-mono'>projects/&lt;project&gt;/memory/</span> — none of the opened projects have any yet.
         </p>
@@ -79,6 +79,7 @@ const MemoryPage = () => {
 
   return (
     <div className='flex flex-col gap-4'>
+      <h1 className='sr-only'>Memory</h1>
       <Tabs value={active.encodedName} onValueChange={onSelect}>
         <TabsList>
           {projectsWithMemory.map(project => (

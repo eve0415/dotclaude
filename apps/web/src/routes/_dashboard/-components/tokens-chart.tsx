@@ -16,15 +16,20 @@ const formatTooltip = (value: unknown, name: unknown): [string, string] => [form
 export const TokensChart = ({ byDay }: { byDay: DayRollup[] }) => {
   const { data, models } = useMemo(() => {
     const modelSet = new Set<string>();
+    for (const day of byDay) {
+      for (const rollup of day.byModel) modelSet.add(rollup.model);
+    }
+    const allModels = [...modelSet];
+    // Zero-fill every model on every day — undefined points break stacked series.
     const chartData = byDay.map(day => {
       const point: Record<string, number | string> = { day: day.day.slice(5) };
+      for (const model of allModels) point[model] = 0;
       for (const rollup of day.byModel) {
-        modelSet.add(rollup.model);
         point[rollup.model] = rollup.usage.outputTokens;
       }
       return point;
     });
-    return { data: chartData, models: [...modelSet] };
+    return { data: chartData, models: allModels };
   }, [byDay]);
 
   if (data.length === 0) {

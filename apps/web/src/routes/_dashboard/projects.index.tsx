@@ -35,6 +35,7 @@ const ProjectsIndex = () => {
 
   return (
     <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
+      <h1 className='sr-only'>Projects</h1>
       {perProject.map(({ project, outputTokens, cost }) => (
         <ProjectLink key={project.encodedName} projectId={project.encodedName} className='group'>
           <Card className='group-hover:border-primary/50 h-full transition-colors'>

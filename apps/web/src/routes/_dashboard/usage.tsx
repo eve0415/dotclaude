@@ -51,6 +51,7 @@ const UsagePage = () => {
 
   return (
     <div className='flex flex-col gap-6'>
+      <h1 className='sr-only'>Usage</h1>
       <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
         <StatCard label='Est. total cost' value={formatUsd(aggregate.totalCostUsd)} detail='input + cache + output, per-model pricing' />
         <StatCard label='Output tokens' value={formatTokens(aggregate.total.outputTokens)} />

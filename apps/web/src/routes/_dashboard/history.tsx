@@ -41,7 +41,7 @@ const HistoryPage = () => {
   if (historyEntry === undefined) {
     return (
       <div className='py-16 text-center'>
-        <p className='text-sm font-medium'>No prompt history</p>
+        <h1 className='text-sm font-medium'>No prompt history</h1>
         <p className='text-muted-foreground mt-1 text-xs'>
           <span className='font-mono'>history.jsonl</span> is only present when the whole <span className='font-mono'>~/.claude</span> directory is opened.
         </p>
@@ -51,25 +51,26 @@ const HistoryPage = () => {
 
   return (
     <div className='flex h-[calc(100vh-8rem)] flex-col gap-3'>
+      <h1 className='sr-only'>Prompt history</h1>
       <Input value={filter} onChange={onFilterChange} placeholder='Filter prompts or projects…' aria-label='Filter prompt history' className='max-w-md' />
       <p className='text-muted-foreground text-xs'>{entries.length} prompts</p>
       <div ref={scrollRef} className='min-h-0 flex-1 overflow-y-auto rounded-lg border'>
-        <ul className='relative' style={spacerStyle}>
+        <div className='relative' style={spacerStyle}>
           {virtualizer.getVirtualItems().map(item => {
             const entry = entries[item.index];
             if (entry === undefined) return null;
             return (
               <VirtualItem key={item.key} index={item.index} start={item.start} measure={virtualizer.measureElement} className='absolute inset-x-0'>
-                <li className='border-border/60 border-b px-4 py-2'>
+                <div className='border-border/60 border-b px-4 py-2'>
                   <p className='truncate font-mono text-sm'>{entry.display}</p>
                   <p className='text-muted-foreground text-xs'>
                     {entry.project ?? 'unknown project'} · {formatDateTime(new Date(entry.timestamp).toISOString())}
                   </p>
-                </li>
+                </div>
               </VirtualItem>
             );
           })}
-        </ul>
+        </div>
       </div>
     </div>
   );
