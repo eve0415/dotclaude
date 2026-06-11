@@ -1,11 +1,28 @@
+import type { AnsiSegment } from '#lib/ansi';
 import type { ReactNode } from 'react';
 
 import { Button } from '@dotclaude/ui/components/button';
 import { cn } from '@dotclaude/ui/lib/utils';
 import { ChevronDown } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+
+import { hasAnsi, parseAnsi } from '#lib/ansi';
 
 const COLLAPSED_RESULT_LINES = 24;
+
+const segmentClass = (segment: AnsiSegment): string | undefined =>
+  cn(segment.bold && 'font-semibold', segment.dim && 'opacity-60', segment.italic && 'italic', segment.underline && 'underline') || undefined;
+
+/** Styled text for output that carries ANSI escapes — bold et al. render, the bytes never do. */
+export const AnsiText = ({ text }: { text: string }) => {
+  const segments = useMemo(() => parseAnsi(text), [text]);
+  return segments.map((segment, i) => (
+    // Index keys are fine: segments are derived solely from `text` and never reorder.
+    <span key={`${String(i)}:${segment.text.slice(0, 16)}`} className={segmentClass(segment)}>
+      {segment.text}
+    </span>
+  ));
+};
 
 export const Collapsible = ({ summary, children, defaultOpen = false }: { summary: ReactNode; children: ReactNode; defaultOpen?: boolean }) => {
   const [open, setOpen] = useState(defaultOpen);
@@ -45,7 +62,7 @@ export const TruncatedPre = ({ text, label, flat = false, className }: { text: s
           className,
         )}
       >
-        {visible}
+        {hasAnsi(visible) ? <AnsiText text={visible} /> : visible}
       </pre>
       {truncated ? (
         <Button variant='ghost' size='sm' className='mt-1 h-6 text-xs' onClick={expand}>
