@@ -13,6 +13,9 @@ export const getRouter = () => {
       queries: {
         staleTime: Number.POSITIVE_INFINITY,
         retry: false,
+        // Parse/worker failures must reach the route error boundary — without this
+        // a failed sweep leaves the progress screen up forever with no feedback.
+        throwOnError: true,
       },
     },
   });
