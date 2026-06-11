@@ -39,7 +39,12 @@ export const unknownBlockSchema = z.looseObject({
   type: z.string(),
 });
 
-export const contentBlockSchema = z.union([thinkingBlockSchema, textBlockSchema, toolUseBlockSchema, toolResultBlockSchema, unknownBlockSchema]);
+// Discriminated dispatch on `type` is O(1) per block on the per-line hot path;
+// the trailing loose member keeps unknown block types (and malformed known ones) parsing.
+export const contentBlockSchema = z.union([
+  z.discriminatedUnion('type', [thinkingBlockSchema, textBlockSchema, toolUseBlockSchema, toolResultBlockSchema]),
+  unknownBlockSchema,
+]);
 
 export type ThinkingBlock = z.infer<typeof thinkingBlockSchema>;
 export type TextBlock = z.infer<typeof textBlockSchema>;
@@ -123,7 +128,10 @@ export type UnknownRecord = z.infer<typeof unknownRecordSchema>;
 
 export type TranscriptRecord = AssistantRecord | UserRecord | SystemRecord | AttachmentRecord | UnknownRecord;
 
-const recordSchema = z.union([assistantRecordSchema, userRecordSchema, systemRecordSchema, attachmentRecordSchema, unknownRecordSchema]);
+const recordSchema = z.union([
+  z.discriminatedUnion('type', [assistantRecordSchema, userRecordSchema, systemRecordSchema, attachmentRecordSchema]),
+  unknownRecordSchema,
+]);
 
 /** Parse one JSONL line. Returns `undefined` for blank lines, corrupt JSON, or non-object payloads. */
 export const parseTranscriptLine = (line: string): TranscriptRecord | undefined => {
