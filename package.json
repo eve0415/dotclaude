@@ -13,12 +13,12 @@
     "deploy": "pnpm --filter './apps/*' deploy"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260606.1",
+    "@typescript/native-preview": "7.0.0-dev.20260610.1",
     "eslint-plugin-react-hooks": "7.1.1",
-    "oxfmt": "0.53.0",
-    "oxlint": "1.68.0",
+    "oxfmt": "0.54.0",
+    "oxlint": "1.69.0",
     "oxlint-tsgolint": "0.23.0",
-    "wrangler": "4.98.0"
+    "wrangler": "4.99.0"
   },
   "engines": {
     "node": "24.15.x"
