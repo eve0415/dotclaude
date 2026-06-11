@@ -4,7 +4,11 @@ import { CircleCheck, CircleDashed, CircleDot } from 'lucide-react';
 import { z } from 'zod';
 
 import { formatLineCount } from '#lib/format';
+import { langFromPath } from '#lib/highlight';
 
+import { CodeBlock } from '../../-shared/code-block';
+
+import { DiffView } from './diff-view';
 import { Collapsible, TruncatedPre } from './primitives';
 
 /**
@@ -67,10 +71,7 @@ const AgentBody = ({ input }: { input: z.infer<typeof agentSchema> }) => (
 const EditBody = ({ input }: { input: z.infer<typeof editSchema> }) => (
   <div className='flex flex-col gap-2'>
     <MonoLine text={input.file_path} />
-    <div className='flex flex-col gap-1'>
-      <TruncatedPre text={input.old_string} label='removed text' className='border-destructive/40 bg-destructive/8 rounded-md border-l-2 p-2' />
-      <TruncatedPre text={input.new_string} label='added text' className='rounded-md border-l-2 border-emerald-500/40 bg-emerald-500/8 p-2' />
-    </div>
+    <DiffView oldText={input.old_string} newText={input.new_string} lang={langFromPath(input.file_path)} />
     {input.replace_all === true ? <p className='text-muted-foreground text-[10px]'>replaces every occurrence</p> : null}
   </div>
 );
@@ -131,7 +132,7 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
       // The description already heads the card via toolSummary.
       return (
         <div className='flex flex-col gap-1.5'>
-          <TruncatedPre flat text={parsed.data.command} label='command' />
+          <CodeBlock flat code={parsed.data.command} lang='shellscript' label='command' />
           {parsed.data.run_in_background === true ? <p className='text-muted-foreground text-[10px]'>runs in background</p> : null}
         </div>
       );
@@ -152,7 +153,7 @@ export const ToolInputBody = ({ name, input }: { name: string; input: unknown })
         <div className='flex flex-col gap-1.5'>
           <MonoLine text={parsed.data.file_path} />
           <Collapsible summary={<span>content · {formatLineCount(parsed.data.content.split('\n').length)}</span>}>
-            <TruncatedPre flat text={parsed.data.content} label='content' />
+            <CodeBlock showLineNumbers code={parsed.data.content} lang={langFromPath(parsed.data.file_path)} label='content' />
           </Collapsible>
         </div>
       );
