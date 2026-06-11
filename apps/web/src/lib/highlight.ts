@@ -153,7 +153,13 @@ const ensureLang = (lang: HighlightLang): Promise<void> => {
 };
 
 const tokenCache = new Map<string, ThemedToken[][]>();
-const TOKEN_CACHE_MAX = 256;
+/**
+ * Token arrays weigh several times their source, and entries can be 100k chars
+ * each — bound the cache by accumulated source size, not entry count, so a few
+ * code-heavy transcripts can't pin hundreds of MB.
+ */
+const TOKEN_CACHE_CHAR_BUDGET = 4_000_000;
+let tokenCacheChars = 0;
 
 const tokenizeSync = (code: string, lang: HighlightLang): ThemedToken[][] | null => {
   if (highlighter === null || !loadedLangs.has(lang)) return null;
@@ -161,11 +167,14 @@ const tokenizeSync = (code: string, lang: HighlightLang): ThemedToken[][] | null
   const cached = tokenCache.get(key);
   if (cached) return cached;
   const { tokens } = highlighter.codeToTokens(code, { lang, theme: THEME_NAME });
-  if (tokenCache.size >= TOKEN_CACHE_MAX) {
-    const oldest = tokenCache.keys().next().value;
-    if (oldest !== undefined) tokenCache.delete(oldest);
-  }
   tokenCache.set(key, tokens);
+  tokenCacheChars += key.length;
+  while (tokenCacheChars > TOKEN_CACHE_CHAR_BUDGET && tokenCache.size > 1) {
+    const oldest = tokenCache.keys().next().value;
+    if (oldest === undefined) break;
+    tokenCache.delete(oldest);
+    tokenCacheChars -= oldest.length;
+  }
   return tokens;
 };
 
