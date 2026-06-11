@@ -1,7 +1,7 @@
 import type { TranscriptRow } from './build-rows';
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 
 import { VirtualItem, useTotalSizeStyle } from '../../-shared/virtual-item';
 
@@ -22,11 +22,15 @@ interface TranscriptViewProps {
  */
 export const TranscriptView = ({ rows, agentsByToolUse, onOpenAgent, className }: TranscriptViewProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Key measurements by row id, not index — filtering reuses indices for
+  // different rows, and index-keyed height caches make rows overlap.
+  const getItemKey = useCallback((index: number) => rows[index]?.id ?? index, [rows]);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 120,
     overscan: 8,
+    getItemKey,
   });
   const spacerStyle = useTotalSizeStyle(virtualizer.getTotalSize());
 
