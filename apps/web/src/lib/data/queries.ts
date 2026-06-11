@@ -3,9 +3,9 @@ import type { ClaudeIndex, ProjectRef } from './scan';
 import type { SessionSummary } from './worker-protocol';
 import type { MemoryFile } from '@dotclaude/schemas/memory';
 
+import { parseAgentMetaText } from '@dotclaude/schemas/agent-meta';
 import { parseMemoryFile } from '@dotclaude/schemas/memory';
 import { queryOptions, skipToken } from '@tanstack/react-query';
-import { z } from 'zod';
 
 import { fileEntryKey } from './file-entry';
 import { parseWorker } from './worker-client';
@@ -53,29 +53,15 @@ export const sessionSummariesQuery = (index: ClaudeIndex, onProgress?: (done: nu
   });
 };
 
-const agentMetaSchema = z.looseObject({
-  agentType: z.string().optional(),
-  description: z.string().optional(),
-  toolUseId: z.string().optional(),
-});
-
-export type AgentMeta = z.infer<typeof agentMetaSchema>;
-
 export const agentMetaQuery = (entry: FileEntry | undefined) =>
   queryOptions({
     queryKey: ['agent-meta', entry === undefined ? 'none' : fileEntryKey(entry)],
     queryFn:
       entry === undefined
         ? skipToken
-        : async (): Promise<AgentMeta> => {
-            // Meta files are optional sidecars — malformed JSON means "no metadata", not an error page.
-            try {
-              const file = await entry.getFile();
-              const result = agentMetaSchema.safeParse(JSON.parse(await file.text()));
-              return result.success ? result.data : {};
-            } catch {
-              return {};
-            }
+        : async () => {
+            const file = await entry.getFile();
+            return parseAgentMetaText(await file.text());
           },
   });
 
