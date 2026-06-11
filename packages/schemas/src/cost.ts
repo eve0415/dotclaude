@@ -33,6 +33,15 @@ const PRICING_TABLE: readonly (readonly [prefix: string, pricing: ModelPricing])
   ['claude-3-haiku', { inputPerMTok: 0.25, outputPerMTok: 1.25 }],
 ];
 
+/** Sum of the defined values; undefined when none are — "no cost data" must never render as $0. */
+export const sumDefined = (values: Iterable<number | undefined>): number | undefined => {
+  let sum: number | undefined;
+  for (const value of values) {
+    if (value !== undefined) sum = (sum ?? 0) + value;
+  }
+  return sum;
+};
+
 export const lookupPricing = (model: string): ModelPricing | undefined => {
   for (const [prefix, pricing] of PRICING_TABLE) {
     if (model.startsWith(prefix)) return pricing;

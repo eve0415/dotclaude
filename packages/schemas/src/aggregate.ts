@@ -1,6 +1,6 @@
 import type { UsageTotals } from './usage';
 
-import { estimateCostUsd } from './cost';
+import { estimateCostUsd, sumDefined } from './cost';
 import { addUsageTotals, emptyUsageTotals } from './usage';
 
 /** One usage data point — typically one assistant message, or one whole session summary. */
@@ -39,13 +39,7 @@ const localDayOf = (timestamp: string): string => {
   return `${d.getFullYear()}-${month}-${day}`;
 };
 
-const rollupCost = (rollups: ModelRollup[]): number | undefined => {
-  let cost: number | undefined;
-  for (const r of rollups) {
-    if (r.costUsd !== undefined) cost = (cost ?? 0) + r.costUsd;
-  }
-  return cost;
-};
+const rollupCost = (rollups: ModelRollup[]): number | undefined => sumDefined(rollups.map(r => r.costUsd));
 
 const intoModelRollups = (map: Map<string, { usage: UsageTotals; eventCount: number }>): ModelRollup[] =>
   [...map.entries()]

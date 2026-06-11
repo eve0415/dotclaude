@@ -17,16 +17,22 @@ const ProjectsIndex = () => {
 
   const perProject = useMemo(() => {
     if (rows === undefined || index === undefined) return;
-    return index.projects.map(project => {
-      let outputTokens = 0;
-      let cost: number | undefined;
-      for (const row of rows) {
-        if (row.project.encodedName !== project.encodedName || row.summary === undefined) continue;
-        outputTokens += row.summary.usage.outputTokens;
-        const c = sessionCost(row.summary);
-        if (c !== undefined) cost = (cost ?? 0) + c;
+    // One pass over all rows, grouped by project — not one scan per project card.
+    const byProject = new Map<string, { outputTokens: number; cost: number | undefined }>();
+    for (const row of rows) {
+      if (row.summary === undefined) continue;
+      let acc = byProject.get(row.project.encodedName);
+      if (acc === undefined) {
+        acc = { outputTokens: 0, cost: undefined };
+        byProject.set(row.project.encodedName, acc);
       }
-      return { project, outputTokens, cost };
+      acc.outputTokens += row.summary.usage.outputTokens;
+      const cost = sessionCost(row.summary);
+      if (cost !== undefined) acc.cost = (acc.cost ?? 0) + cost;
+    }
+    return index.projects.map(project => {
+      const acc = byProject.get(project.encodedName);
+      return { project, outputTokens: acc?.outputTokens ?? 0, cost: acc?.cost };
     });
   }, [rows, index]);
 

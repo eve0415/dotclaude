@@ -1,16 +1,11 @@
 import type { SessionSummary } from '@dotclaude/schemas/session';
 
-import { estimateCostUsd } from '@dotclaude/schemas/cost';
+import { estimateCostUsd, sumDefined } from '@dotclaude/schemas/cost';
 
 /** Total estimated USD for a session, priced per model. Undefined when nothing is priceable. */
 export const sessionCost = (summary: SessionSummary | undefined): number | undefined => {
   if (summary === undefined) return undefined;
-  let cost: number | undefined;
-  for (const [model, usage] of Object.entries(summary.usageByModel)) {
-    const c = estimateCostUsd(model, usage);
-    if (c !== undefined) cost = (cost ?? 0) + c;
-  }
-  return cost;
+  return sumDefined(Object.entries(summary.usageByModel).map(([model, usage]) => estimateCostUsd(model, usage)));
 };
 
 export const sessionToolTotal = (summary: SessionSummary | undefined): number => {
