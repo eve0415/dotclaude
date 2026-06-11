@@ -9,6 +9,7 @@ import { cn } from '@dotclaude/ui/lib/utils';
 import { FileJson2, FolderOpen, HardDriveDownload, History, ShieldCheck, WifiOff } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
+import { AppMark } from '../-root/app-mark';
 import { GithubLink, GithubMark } from '../-shared/github-link';
 
 type DataSourceValue = ReturnType<typeof useDataSource>;
@@ -83,9 +84,7 @@ export const OnboardingScreen = ({ dataSource, error, runOpen }: OnboardingScree
     >
       <div className='w-full max-w-3xl'>
         <div className='mb-10 text-center'>
-          <div className='bg-primary text-primary-foreground mx-auto mb-6 flex size-12 items-center justify-center rounded-xl font-mono text-lg font-bold'>
-            ~/
-          </div>
+          <AppMark className='mx-auto mb-6 size-12' />
           <h1 className='text-3xl font-semibold tracking-tight'>Visualize your Claude Code activity, locally.</h1>
           <p className='text-muted-foreground mx-auto mt-3 max-w-xl text-balance'>
             Sessions, tool calls, subagents, token spend, and memories from <span className='font-mono text-sm'>~/.claude</span> — processed 100% in your

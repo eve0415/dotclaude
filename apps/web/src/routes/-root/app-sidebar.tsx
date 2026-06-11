@@ -18,6 +18,7 @@ import { useCallback } from 'react';
 
 import { useDataSource } from '#lib/data/data-source';
 
+import { AppMark } from './app-mark';
 import { navItems } from './nav-items';
 import { ThemeToggle } from './theme-toggle';
 
@@ -41,9 +42,7 @@ export const AppSidebar = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size='lg' render={<Link to='/' />}>
-                <div className='bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg font-mono text-xs font-bold'>
-                  ~/
-                </div>
+                <AppMark className='size-8' />
                 <div className='flex flex-col gap-0.5 leading-none'>
                   <span className='font-semibold'>dotclaude</span>
                   <span className='text-muted-foreground text-xs'>session explorer</span>
