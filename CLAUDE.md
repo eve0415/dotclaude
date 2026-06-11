@@ -22,5 +22,6 @@ Privacy-first dashboard for Claude Code's `~/.claude` data. **Invariant: user fi
 - Heavy parsing belongs in `lib/data/parse.worker.ts`; main thread only builds rows/aggregates from already-parsed records
 - Query keys embed file identity `path:size:mtime` (`fileEntryKey`) — same key ⇒ cached parse stays valid
 - Pricing/model additions: one entry in `packages/schemas/src/cost.ts` PRICING_TABLE (longest-prefix match)
+- Syntax highlighting: Shiki css-variables theme in `apps/web/src/lib/highlight.ts` — a new language is one `LANG_LOADERS` entry plus extension/alias mappings; every syntax/diff color is a `--code-token-*` / `--diff-*` var in `packages/ui/src/globals.css`, rendered via static classes (never inline styles or `dangerouslySetInnerHTML`)
 - New transcript record types: extend the union in `packages/schemas/src/transcript.ts`; they already pass through `unknownRecordSchema` — only add a schema when the UI needs the fields
 - `packages/schemas/src/real-data.validation.test.ts` runs against the machine's real `~/.claude` when present — keep it passing after parser changes
