@@ -23,11 +23,7 @@ export interface ProjectRef {
   memoryFiles: FileEntry[];
 }
 
-/** How the picked input maps onto ~/.claude's layout. */
-export type RootKind = 'claude-root' | 'project-dir' | 'single-session';
-
 export interface ClaudeIndex {
-  rootKind: RootKind;
   projects: ProjectRef[];
   historyEntry: FileEntry | undefined;
   sessionCount: number;
@@ -89,7 +85,6 @@ export const scanEntries = (entries: readonly FileEntry[]): ClaudeIndex => {
     return acc;
   };
 
-  let rootKind: RootKind = 'project-dir';
   let sawProjectsDir = false;
 
   for (const entry of entries) {
@@ -105,15 +100,7 @@ export const scanEntries = (entries: readonly FileEntry[]): ClaudeIndex => {
     }
   }
 
-  if (sawProjectsDir) {
-    rootKind = 'claude-root';
-    projects.delete('.');
-  } else {
-    const bare = projects.get('.');
-    if (bare?.sessions.size === 1 && bare.memoryFiles.length === 0 && entries.length === 1) {
-      rootKind = 'single-session';
-    }
-  }
+  if (sawProjectsDir) projects.delete('.');
 
   const projectRefs: ProjectRef[] = [];
   let sessionCount = 0;
@@ -141,5 +128,5 @@ export const scanEntries = (entries: readonly FileEntry[]): ClaudeIndex => {
   }
   projectRefs.sort((a, b) => (b.sessions[0]?.entry.lastModified ?? 0) - (a.sessions[0]?.entry.lastModified ?? 0));
 
-  return { rootKind, projects: projectRefs, historyEntry, sessionCount, totalSessionBytes };
+  return { projects: projectRefs, historyEntry, sessionCount, totalSessionBytes };
 };

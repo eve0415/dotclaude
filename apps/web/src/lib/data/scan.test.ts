@@ -28,7 +28,6 @@ describe('scanEntries', () => {
       entry('settings.json'),
     ]);
 
-    expect(index.rootKind).toBe('claude-root');
     expect(index.projects).toHaveLength(2);
     expect(index.sessionCount).toBe(2);
     expect(index.totalSessionBytes).toBe(5300);
@@ -46,7 +45,6 @@ describe('scanEntries', () => {
 
   it('classifies a single project directory', () => {
     const index = scanEntries([entry(`${SESSION_A}.jsonl`), entry(`${SESSION_A}/subagents/agent-ff00ff00ff00ff00.jsonl`), entry('memory/MEMORY.md')]);
-    expect(index.rootKind).toBe('project-dir');
     expect(index.projects).toHaveLength(1);
     expect(index.projects[0]?.sessions[0]?.agents).toHaveLength(1);
     expect(index.projects[0]?.memoryFiles).toHaveLength(1);
@@ -54,7 +52,6 @@ describe('scanEntries', () => {
 
   it('classifies a single dropped session file', () => {
     const index = scanEntries([entry(`${SESSION_A}.jsonl`)]);
-    expect(index.rootKind).toBe('single-session');
     expect(index.sessionCount).toBe(1);
   });
 
