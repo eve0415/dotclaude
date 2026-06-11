@@ -305,28 +305,35 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
   return rows;
 };
 
-/** Case-insensitive in-memory search across row content (the DOM only holds the visible window). */
-export const rowMatches = (row: TranscriptRow, needle: string): boolean => {
-  const haystacks: string[] = [];
+const haystackOf = (row: TranscriptRow): string => {
   switch (row.kind) {
     case 'user':
-      haystacks.push(row.text);
-      break;
+      return row.text;
     case 'assistant-text':
-      haystacks.push(row.markdown);
-      break;
+      return row.markdown;
     case 'thinking':
-      haystacks.push(row.text);
-      break;
+      return row.text;
     case 'tool':
-      haystacks.push(row.name, row.inputText, row.result ?? '');
-      break;
+      return `${row.name}\n${row.inputText}\n${row.result ?? ''}`;
     case 'meta':
-      haystacks.push(row.label, row.detail ?? '');
-      break;
+      return `${row.label}\n${row.detail ?? ''}`;
     case 'command':
-      haystacks.push(row.name, row.args ?? '', row.stdout ?? '');
-      break;
+      return `${row.name}\n${row.args ?? ''}\n${row.stdout ?? ''}`;
   }
-  return haystacks.some(h => h.toLowerCase().includes(needle));
+};
+
+/**
+ * Rows are immutable once buildRows returns, so the lowercased haystack is
+ * computed once per row instead of re-lowercasing megabytes per keystroke.
+ */
+const lowerHaystacks = new WeakMap<TranscriptRow, string>();
+
+/** Case-insensitive in-memory search across row content (the DOM only holds the visible window). */
+export const rowMatches = (row: TranscriptRow, needle: string): boolean => {
+  let haystack = lowerHaystacks.get(row);
+  if (haystack === undefined) {
+    haystack = haystackOf(row).toLowerCase();
+    lowerHaystacks.set(row, haystack);
+  }
+  return haystack.includes(needle);
 };

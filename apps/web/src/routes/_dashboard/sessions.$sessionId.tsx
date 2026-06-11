@@ -11,7 +11,7 @@ import { Toggle } from '@dotclaude/ui/components/toggle';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Brain, ChevronRight, Info, Wrench } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { z } from 'zod';
 
 import { useDataSource } from '#lib/data/data-source';
@@ -233,10 +233,11 @@ const SessionDetail = () => {
   const agentsByToolUse = useAgentMap(found?.session.agents ?? []);
   const summary = useMemo(() => (records.data === undefined ? undefined : summarizeSession(records.data)), [records.data]);
 
+  const deferredSearch = useDeferredValue(search);
   const allRows = useMemo(() => buildRows(records.data ?? []), [records.data]);
   const counts = useMemo(() => countKinds(allRows), [allRows]);
   const rows = useMemo(() => {
-    const needle = search.trim().toLowerCase();
+    const needle = deferredSearch.trim().toLowerCase();
     return allRows.filter(row => {
       if (row.kind === 'thinking' && !filters.thinking) return false;
       if (row.kind === 'tool' && !filters.tools) return false;
@@ -244,7 +245,7 @@ const SessionDetail = () => {
       if (needle !== '' && !rowMatches(row, needle)) return false;
       return true;
     });
-  }, [allRows, search, filters]);
+  }, [allRows, deferredSearch, filters]);
 
   const onSearchChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);
