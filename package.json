@@ -1,0 +1,27 @@
+{
+  "name": "dotclaude",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter './apps/*' --filter './packages/*' build",
+    "test": "pnpm --filter './apps/*' --filter './packages/*' test",
+    "lint": "oxlint --report-unused-disable-directives --fix --fix-suggestions --fix-dangerously && oxfmt",
+    "lint:ci": "oxlint --report-unused-disable-directives && oxfmt --check",
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "clean": "pnpm --filter './apps/*' clean",
+    "generate": "pnpm --filter './apps/*' generate",
+    "deploy": "pnpm --filter './apps/*' deploy"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260606.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "oxfmt": "0.53.0",
+    "oxlint": "1.68.0",
+    "oxlint-tsgolint": "0.23.0",
+    "wrangler": "4.98.0"
+  },
+  "engines": {
+    "node": "24.15.x"
+  },
+  "packageManager": "pnpm@11.5.1"
+}

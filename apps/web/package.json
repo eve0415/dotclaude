@@ -1,0 +1,55 @@
+{
+  "name": "dotclaude-web",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "test": "vitest run",
+    "generate": "wrangler types -c wrangler.json",
+    "clean": "rm -rf dist .output .vinxi",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.40.0",
+    "@dotclaude/schemas": "workspace:*",
+    "@dotclaude/ui": "workspace:*",
+    "@rolldown/plugin-babel": "0.2.3",
+    "@tailwindcss/vite": "4.3.0",
+    "@tanstack/react-devtools": "0.10.5",
+    "@tanstack/react-query": "5.101.0",
+    "@tanstack/react-router": "1.170.15",
+    "@tanstack/react-router-devtools": "1.167.0",
+    "@tanstack/react-router-ssr-query": "1.167.1",
+    "@tanstack/react-start": "1.168.24",
+    "@tanstack/react-table": "9.0.0-beta.6",
+    "@tanstack/react-virtual": "3.14.2",
+    "@tanstack/router-plugin": "1.168.18",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "25.9.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "axe-core": "4.12.0",
+    "babel-plugin-react-compiler": "1.0.0",
+    "idb-keyval": "6.2.2",
+    "jsdom": "29.1.1",
+    "lucide-react": "1.17.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-error-boundary": "6.1.2",
+    "react-markdown": "10.1.0",
+    "recharts": "3.8.1",
+    "tailwindcss": "4.3.0",
+    "vite": "8.0.16",
+    "vitest": "4.1.8",
+    "zod": "4.4.3"
+  }
+}

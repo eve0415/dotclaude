@@ -1,0 +1,46 @@
+{
+  "name": "@dotclaude/ui",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#*": [
+      "./src/*",
+      "./src/*.ts",
+      "./src/*.tsx"
+    ]
+  },
+  "exports": {
+    "./components/*": {
+      "import": "./src/components/*.tsx",
+      "types": "./src/components/*.tsx"
+    },
+    "./hooks/*": {
+      "import": "./src/hooks/*.ts",
+      "types": "./src/hooks/*.ts"
+    },
+    "./lib/*": {
+      "import": "./src/lib/*.ts",
+      "types": "./src/lib/*.ts"
+    },
+    "./globals.css": "./src/globals.css"
+  },
+  "scripts": {
+    "build": "echo 'source-only package'"
+  },
+  "devDependencies": {
+    "@base-ui/react": "1.5.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "date-fns": "4.4.0",
+    "geist": "1.7.2",
+    "lucide-react": "1.17.0",
+    "react": "19.2.7",
+    "react-day-picker": "9.14.0",
+    "react-dom": "19.2.7",
+    "tailwind-merge": "3.6.0",
+    "tailwindcss": "4.3.0",
+    "tw-animate-css": "1.4.0"
+  }
+}
