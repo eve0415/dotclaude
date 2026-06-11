@@ -8,12 +8,5 @@ const outputTokensOf = (rollup: ModelRollup): number => rollup.usage.outputToken
 
 /** Stacked output tokens per day, one series per model. */
 export const TokensChart = ({ byDay }: { byDay: DayRollup[] }) => (
-  <StackedDayChart
-    byDay={byDay}
-    kind='bar'
-    ariaLabel='Output tokens per day, stacked by model'
-    valueOf={outputTokensOf}
-    formatValue={formatTokens}
-    yAxisWidth={48}
-  />
+  <StackedDayChart byDay={byDay} kind='bar' ariaLabel='Output tokens per day, stacked by model' valueOf={outputTokensOf} formatValue={formatTokens} />
 );

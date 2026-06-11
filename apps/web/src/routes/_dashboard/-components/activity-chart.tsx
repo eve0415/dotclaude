@@ -8,12 +8,5 @@ const costOf = (rollup: ModelRollup): number => Number((rollup.costUsd ?? 0).toF
 
 /** Stacked estimated cost per day, one series per model. */
 export const ActivityChart = ({ byDay }: { byDay: DayRollup[] }) => (
-  <StackedDayChart
-    byDay={byDay}
-    kind='area'
-    ariaLabel='Estimated API cost per day, stacked by model'
-    valueOf={costOf}
-    formatValue={formatUsd}
-    yAxisWidth={56}
-  />
+  <StackedDayChart byDay={byDay} kind='area' ariaLabel='Estimated API cost per day, stacked by model' valueOf={costOf} formatValue={formatUsd} />
 );

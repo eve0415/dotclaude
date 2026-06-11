@@ -4,5 +4,7 @@ packages:
 engineStrict: true
 allowBuilds:
   esbuild: true
+  # transitive dep of @unovis/ts (map components, never imported) — build script not needed
+  maplibre-gl: false
   sharp: true
   workerd: true
