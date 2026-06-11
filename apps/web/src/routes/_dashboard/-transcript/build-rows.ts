@@ -18,9 +18,16 @@ interface BaseRow {
   offsetMs: number | undefined;
 }
 
+/** A `[Image #N]` reference in a prompt, resolved to its image-cache source path. */
+export interface PromptImage {
+  index: number;
+  sourcePath: string;
+}
+
 export interface UserRow extends BaseRow {
   kind: 'user';
   text: string;
+  images: PromptImage[];
 }
 
 export interface AssistantTextRow extends BaseRow {
@@ -53,6 +60,8 @@ export interface MetaRow extends BaseRow {
   variant: 'caveat' | 'reminder' | 'context' | 'skill' | 'system' | 'other';
   label: string;
   detail: string | undefined;
+  /** Set when the record is an `[Image: source: …]` attachment — the view renders the image. */
+  imageSource?: string;
 }
 
 /** A slash-command invocation (`<command-name>` user record), with its stdout merged in. */
@@ -91,6 +100,32 @@ const tagContent = (text: string, tag: string): string | undefined => {
 };
 
 /**
+ * Pasted images arrive as injected-context records: `[Image: source:
+ * /home/…/.claude/image-cache/<session>/<N>.png]`. The `<N>` is the same
+ * number the prompt references as `[Image #N]`, numbered across the session.
+ */
+const IMAGE_SOURCE_RE = /^\[Image: source: (.+)\]$/;
+const IMAGE_INDEX_RE = /(\d+)\.[a-z]+$/i;
+const IMAGE_REF_RE = /\[Image #(\d+)\]/g;
+
+const imageSourceOf = (text: string): string | undefined => IMAGE_SOURCE_RE.exec(text.trim())?.[1];
+
+/** Resolve a prompt's `[Image #N]` references against the session's attachment records. */
+const promptImages = (text: string, imageSources: ReadonlyMap<number, string>): PromptImage[] => {
+  if (imageSources.size === 0 || !text.includes('[Image #')) return [];
+  const images: PromptImage[] = [];
+  const seen = new Set<number>();
+  for (const match of text.matchAll(IMAGE_REF_RE)) {
+    const index = Number(match[1]);
+    const sourcePath = imageSources.get(index);
+    if (sourcePath === undefined || seen.has(index)) continue;
+    seen.add(index);
+    images.push({ index, sourcePath });
+  }
+  return images;
+};
+
+/**
  * Classify a string-content user record into its semantic row. Claude Code
  * encodes local commands and injected context as XML-ish wrappers inside
  * ordinary user messages — surfacing them raw is unreadable.
@@ -100,6 +135,7 @@ const classifyUserText = (
   id: string,
   text: string,
   isMeta: boolean,
+  imageSources: ReadonlyMap<number, string>,
 ): TranscriptRow | undefined => {
   const commandName = tagContent(text, 'command-name');
   if (commandName !== undefined) {
@@ -124,10 +160,14 @@ const classifyUserText = (
     return { ...base, id, kind: 'meta', variant: 'skill', label: 'skill context', detail: text };
   }
   if (isMeta) {
+    const imageSource = imageSourceOf(text);
+    if (imageSource !== undefined) {
+      return { ...base, id, kind: 'meta', variant: 'context', label: 'image', detail: text, imageSource };
+    }
     return { ...base, id, kind: 'meta', variant: 'context', label: 'injected context', detail: text };
   }
   if (text.trim() === '') return undefined;
-  return { ...base, id, kind: 'user', text };
+  return { ...base, id, kind: 'user', text, images: promptImages(text, imageSources) };
 };
 
 const userText = (content: string | { type: string }[]): string => {
@@ -139,9 +179,27 @@ const userText = (content: string | { type: string }[]): string => {
   return parts.join('\n');
 };
 
+/**
+ * Session-wide map of attachment number → image-cache path. A separate pass
+ * because the attachment record lands *after* the prompt that references it.
+ */
+const collectImageSources = (records: TranscriptRecord[]): ReadonlyMap<number, string> => {
+  const sources = new Map<number, string>();
+  for (const record of records) {
+    if (!isUserRecord(record) || record.isMeta !== true) continue;
+    const text = typeof record.message.content === 'string' ? record.message.content : userText(record.message.content);
+    const sourcePath = imageSourceOf(text);
+    if (sourcePath === undefined) continue;
+    const index = IMAGE_INDEX_RE.exec(sourcePath)?.[1];
+    if (index !== undefined) sources.set(Number(index), sourcePath);
+  }
+  return sources;
+};
+
 export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
   const rows: TranscriptRow[] = [];
   const toolRowByUseId = new Map<string, ToolRow>();
+  const imageSources = collectImageSources(records);
   let lastCommandRow: CommandRow | undefined;
   let startTime: number | undefined;
 
@@ -178,7 +236,7 @@ export const buildRows = (records: TranscriptRecord[]): TranscriptRow[] => {
         text = userText(record.message.content);
         if (text.trim() === '') continue;
       }
-      const row = classifyUserText(base, `r${recordIndex}`, text, record.isMeta === true);
+      const row = classifyUserText(base, `r${recordIndex}`, text, record.isMeta === true, imageSources);
       if (row === undefined) continue;
       // Local-command stdout arrives as its own record right after the
       // invocation — fold it into the command row so they read as one event.

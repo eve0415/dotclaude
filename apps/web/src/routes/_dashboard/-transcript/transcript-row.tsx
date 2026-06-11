@@ -17,6 +17,7 @@ import { ModelBadge } from '../../-shared/model-badge';
 import { Collapsible, TruncatedPre } from './primitives';
 import { ToolInputBody, toolSummary } from './tool-input';
 import { ToolResultBody } from './tool-result';
+import { ImageAttachment, ImageRefChip } from './transcript-image';
 
 const Gutter = ({ offsetMs, icon }: { offsetMs: number | undefined; icon: ReactNode }) => (
   <div aria-hidden className='flex w-14 shrink-0 flex-col items-end gap-1 pt-1 sm:w-20'>
@@ -88,6 +89,23 @@ const metaPreview = (detail: string | undefined): string => {
   return '';
 };
 
+/** Token boundary for `[Image #N]` references — split keeps the tokens as their own parts. */
+const IMAGE_TOKEN_SPLIT_RE = /(\[Image #\d+\])/;
+const IMAGE_TOKEN_RE = /^\[Image #(\d+)\]$/;
+
+/** Prompt text with `[Image #N]` tokens swapped for clickable image chips. */
+const UserPromptText = ({ row }: { row: Extract<TranscriptRow, { kind: 'user' }> }) => {
+  if (row.images.length === 0) return row.text;
+  const bySourceIndex = new Map(row.images.map(image => [image.index, image.sourcePath]));
+  return row.text.split(IMAGE_TOKEN_SPLIT_RE).map((part, i) => {
+    const index = IMAGE_TOKEN_RE.exec(part)?.[1];
+    const sourcePath = index === undefined ? undefined : bySourceIndex.get(Number(index));
+    const key = `${String(i)}:${part.slice(0, 24)}`;
+    if (index !== undefined && sourcePath !== undefined) return <ImageRefChip key={key} index={Number(index)} sourcePath={sourcePath} />;
+    return <span key={key}>{part}</span>;
+  });
+};
+
 const MetaRowView = ({ row }: { row: Extract<TranscriptRow, { kind: 'meta' }> }) => {
   const Icon = META_ICONS[row.variant];
   return (
@@ -113,12 +131,16 @@ const MetaRowView = ({ row }: { row: Extract<TranscriptRow, { kind: 'meta' }> })
             }
           >
             <div className='border-border/60 bg-muted/30 rounded-md border-l-2 px-3 py-2'>
-              {row.variant === 'skill' ? (
-                <div className={`${markdownClasses} max-h-[32rem] overflow-auto`}>
-                  <MarkdownBlock markdown={row.detail} />
-                </div>
+              {row.imageSource === undefined ? (
+                row.variant === 'skill' ? (
+                  <div className={`${markdownClasses} max-h-[32rem] overflow-auto`}>
+                    <MarkdownBlock markdown={row.detail} />
+                  </div>
+                ) : (
+                  <TruncatedPre flat text={row.detail} label={row.label} className='text-muted-foreground' />
+                )
               ) : (
-                <TruncatedPre flat text={row.detail} label={row.label} className='text-muted-foreground' />
+                <ImageAttachment sourcePath={row.imageSource} label='pasted image' />
               )}
             </div>
           </Collapsible>
@@ -169,7 +191,16 @@ export const TranscriptRowView = ({ row, onOpenAgent, agentForToolUse }: Transcr
         <article aria-label='User prompt' className='flex gap-3 py-3'>
           <Gutter offsetMs={row.offsetMs} icon={<User className='size-3.5' />} />
           <div className='border-primary/60 bg-primary/5 min-w-0 flex-1 rounded-lg border-l-2 px-4 py-3'>
-            <p className='text-sm leading-relaxed font-medium break-words whitespace-pre-wrap'>{row.text}</p>
+            <p className='text-sm leading-relaxed font-medium break-words whitespace-pre-wrap'>
+              <UserPromptText row={row} />
+            </p>
+            {row.images.length === 0 ? null : (
+              <div className='mt-3 flex flex-wrap gap-2'>
+                {row.images.map(image => (
+                  <ImageAttachment key={image.index} sourcePath={image.sourcePath} label={`Image #${String(image.index)}`} />
+                ))}
+              </div>
+            )}
           </div>
         </article>
       );

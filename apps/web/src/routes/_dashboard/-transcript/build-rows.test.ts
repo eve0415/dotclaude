@@ -19,6 +19,11 @@ const metaRow = (row: TranscriptRow | undefined) => {
   return row;
 };
 
+const userRow = (row: TranscriptRow | undefined) => {
+  if (row?.kind !== 'user') throw new Error('expected a user row');
+  return row;
+};
+
 const parse = (value: object): TranscriptRecord => {
   const record = parseTranscriptLine(JSON.stringify(value));
   if (record === undefined) throw new Error('fixture did not parse');
@@ -108,6 +113,28 @@ describe('user record classification', () => {
       parse({ type: 'user', isMeta: true, message: { role: 'user', content: 'plain injected context' } }),
     ]);
     expect(rows.map(r => metaRow(r).variant)).toEqual(['caveat', 'reminder', 'context']);
+  });
+
+  it('resolves [Image #N] prompt references against image attachment records', () => {
+    const rows = buildRows([
+      parse({
+        type: 'user',
+        timestamp: '2026-06-10T01:00:00.000Z',
+        message: { role: 'user', content: '[Image #2] what is this? [Image #9] missing one' },
+      }),
+      parse({
+        type: 'user',
+        isMeta: true,
+        timestamp: '2026-06-10T01:00:00.000Z',
+        message: { role: 'user', content: [{ type: 'text', text: '[Image: source: /home/me/.claude/image-cache/abc/2.png]' }] },
+      }),
+    ]);
+    expect(rows.map(r => r.kind)).toEqual(['user', 'meta']);
+    // #9 has no attachment record — it stays plain text.
+    expect(userRow(rows[0]).images).toEqual([{ index: 2, sourcePath: '/home/me/.claude/image-cache/abc/2.png' }]);
+    const image = metaRow(rows[1]);
+    expect(image.label).toBe('image');
+    expect(image.imageSource).toBe('/home/me/.claude/image-cache/abc/2.png');
   });
 
   it('folds local_command system stdout into the preceding command row', () => {
