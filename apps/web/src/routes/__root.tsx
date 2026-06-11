@@ -2,17 +2,24 @@ import type { QueryClient } from '@tanstack/react-query';
 
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router';
 
+import { DataSourceProvider } from '#lib/data/data-source';
+
+import { ThemeProvider } from './-root/theme-provider';
 import rootCss from './__root.css?url';
 
 const bodyStyle = { fontFamily: 'Geist, sans-serif' };
 
 const RootComponent = () => (
-  <html lang='en' className='dark'>
+  <html lang='en' suppressHydrationWarning>
     <head>
       <HeadContent />
     </head>
     <body className='bg-background text-foreground min-h-screen antialiased' style={bodyStyle}>
-      <Outlet />
+      <ThemeProvider>
+        <DataSourceProvider>
+          <Outlet />
+        </DataSourceProvider>
+      </ThemeProvider>
       <Scripts />
     </body>
   </html>
@@ -20,7 +27,12 @@ const RootComponent = () => (
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    meta: [{ charSet: 'utf8' }, { name: 'viewport', content: 'width=device-width, initial-scale=1' }, { title: 'dotclaude' }],
+    meta: [
+      { charSet: 'utf8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'dotclaude — Claude Code session explorer' },
+      { name: 'description', content: 'Visualize your Claude Code sessions, tool calls, token usage, and memories. Everything stays in your browser.' },
+    ],
     links: [
       { rel: 'stylesheet', href: rootCss },
       {

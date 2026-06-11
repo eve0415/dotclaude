@@ -9,38 +9,143 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardUsageRouteImport } from './routes/_dashboard/usage'
+import { Route as DashboardOverviewRouteImport } from './routes/_dashboard/overview'
+import { Route as DashboardMemoryRouteImport } from './routes/_dashboard/memory'
+import { Route as DashboardHistoryRouteImport } from './routes/_dashboard/history'
+import { Route as DashboardProjectsIndexRouteImport } from './routes/_dashboard/projects.index'
+import { Route as DashboardSessionsSessionIdRouteImport } from './routes/_dashboard/sessions.$sessionId'
+import { Route as DashboardProjectsProjectIdRouteImport } from './routes/_dashboard/projects.$projectId'
 
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/_dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardUsageRoute = DashboardUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOverviewRoute = DashboardOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardMemoryRoute = DashboardMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardHistoryRoute = DashboardHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProjectsIndexRoute = DashboardProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSessionsSessionIdRoute =
+  DashboardSessionsSessionIdRouteImport.update({
+    id: '/sessions/$sessionId',
+    path: '/sessions/$sessionId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardProjectsProjectIdRoute =
+  DashboardProjectsProjectIdRouteImport.update({
+    id: '/projects/$projectId',
+    path: '/projects/$projectId',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/history': typeof DashboardHistoryRoute
+  '/memory': typeof DashboardMemoryRoute
+  '/overview': typeof DashboardOverviewRoute
+  '/usage': typeof DashboardUsageRoute
+  '/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/sessions/$sessionId': typeof DashboardSessionsSessionIdRoute
+  '/projects/': typeof DashboardProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/history': typeof DashboardHistoryRoute
+  '/memory': typeof DashboardMemoryRoute
+  '/overview': typeof DashboardOverviewRoute
+  '/usage': typeof DashboardUsageRoute
+  '/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/sessions/$sessionId': typeof DashboardSessionsSessionIdRoute
+  '/projects': typeof DashboardProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_dashboard': typeof DashboardRouteWithChildren
+  '/_dashboard/history': typeof DashboardHistoryRoute
+  '/_dashboard/memory': typeof DashboardMemoryRoute
+  '/_dashboard/overview': typeof DashboardOverviewRoute
+  '/_dashboard/usage': typeof DashboardUsageRoute
+  '/_dashboard/projects/$projectId': typeof DashboardProjectsProjectIdRoute
+  '/_dashboard/sessions/$sessionId': typeof DashboardSessionsSessionIdRoute
+  '/_dashboard/projects/': typeof DashboardProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/history'
+    | '/memory'
+    | '/overview'
+    | '/usage'
+    | '/projects/$projectId'
+    | '/sessions/$sessionId'
+    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/history'
+    | '/memory'
+    | '/overview'
+    | '/usage'
+    | '/projects/$projectId'
+    | '/sessions/$sessionId'
+    | '/projects'
+  id:
+    | '__root__'
+    | '/'
+    | '/_dashboard'
+    | '/_dashboard/history'
+    | '/_dashboard/memory'
+    | '/_dashboard/overview'
+    | '/_dashboard/usage'
+    | '/_dashboard/projects/$projectId'
+    | '/_dashboard/sessions/$sessionId'
+    | '/_dashboard/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_dashboard': {
+      id: '/_dashboard'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +153,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/usage': {
+      id: '/_dashboard/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof DashboardUsageRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/overview': {
+      id: '/_dashboard/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof DashboardOverviewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/memory': {
+      id: '/_dashboard/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof DashboardMemoryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/history': {
+      id: '/_dashboard/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof DashboardHistoryRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/projects/': {
+      id: '/_dashboard/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof DashboardProjectsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/sessions/$sessionId': {
+      id: '/_dashboard/sessions/$sessionId'
+      path: '/sessions/$sessionId'
+      fullPath: '/sessions/$sessionId'
+      preLoaderRoute: typeof DashboardSessionsSessionIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/projects/$projectId': {
+      id: '/_dashboard/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof DashboardProjectsProjectIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardHistoryRoute: typeof DashboardHistoryRoute
+  DashboardMemoryRoute: typeof DashboardMemoryRoute
+  DashboardOverviewRoute: typeof DashboardOverviewRoute
+  DashboardUsageRoute: typeof DashboardUsageRoute
+  DashboardProjectsProjectIdRoute: typeof DashboardProjectsProjectIdRoute
+  DashboardSessionsSessionIdRoute: typeof DashboardSessionsSessionIdRoute
+  DashboardProjectsIndexRoute: typeof DashboardProjectsIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardHistoryRoute: DashboardHistoryRoute,
+  DashboardMemoryRoute: DashboardMemoryRoute,
+  DashboardOverviewRoute: DashboardOverviewRoute,
+  DashboardUsageRoute: DashboardUsageRoute,
+  DashboardProjectsProjectIdRoute: DashboardProjectsProjectIdRoute,
+  DashboardSessionsSessionIdRoute: DashboardSessionsSessionIdRoute,
+  DashboardProjectsIndexRoute: DashboardProjectsIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

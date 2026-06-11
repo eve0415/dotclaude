@@ -428,5 +428,14 @@ export default defineConfig({
         'no-await-in-loop': 'off',
       },
     },
+    // TanStack Virtual's useVirtualizer returns functions React Compiler can't
+    // memoize; the compiler skips these components by design, which is fine —
+    // virtualization manages its own subscriptions.
+    {
+      files: ['apps/web/src/routes/_dashboard/-transcript/transcript-view.tsx', 'apps/web/src/routes/_dashboard/history.tsx'],
+      rules: {
+        'react-hooks-js/incompatible-library': 'off',
+      },
+    },
   ],
 });
