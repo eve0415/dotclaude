@@ -23,12 +23,23 @@ const relativeImagePath = (sourcePath: string): string | undefined => {
   return at === -1 ? undefined : sourcePath.slice(at + marker.length);
 };
 
+/** Path → entry index, built once per opened source instead of a linear scan per image chip. */
+const entryMaps = new WeakMap<readonly FileEntry[], Map<string, FileEntry>>();
+const entryByPath = (entries: readonly FileEntry[], path: string): FileEntry | undefined => {
+  let map = entryMaps.get(entries);
+  if (map === undefined) {
+    map = new Map(entries.map(entry => [entry.path, entry]));
+    entryMaps.set(entries, map);
+  }
+  return map.get(path);
+};
+
 const useImageEntry = (sourcePath: string): FileEntry | undefined => {
   const { source } = useDataSource();
   return useMemo(() => {
     const relative = relativeImagePath(sourcePath);
-    if (relative === undefined) return;
-    return source?.entries.find(entry => entry.path === relative);
+    if (relative === undefined || source === undefined) return;
+    return entryByPath(source.entries, relative);
   }, [source, sourcePath]);
 };
 
