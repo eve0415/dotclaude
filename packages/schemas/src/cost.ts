@@ -28,6 +28,7 @@ const PRICING_TABLE: readonly (readonly [prefix: string, pricing: ModelPricing])
   ['claude-opus-4', { inputPerMTok: 15, outputPerMTok: 75 }],
   ['claude-sonnet-4', { inputPerMTok: 3, outputPerMTok: 15 }],
   ['claude-haiku-4-5', { inputPerMTok: 1, outputPerMTok: 5 }],
+  ['claude-haiku-4', { inputPerMTok: 1, outputPerMTok: 5 }],
   ['claude-3-5-haiku', { inputPerMTok: 0.8, outputPerMTok: 4 }],
   ['claude-3-haiku', { inputPerMTok: 0.25, outputPerMTok: 1.25 }],
 ];
