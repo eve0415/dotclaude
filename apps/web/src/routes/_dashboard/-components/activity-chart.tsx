@@ -1,16 +1,18 @@
 import type { DayRollup } from '@dotclaude/schemas/aggregate';
+import type { ReactNode } from 'react';
 
 import { useMemo } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { formatUsd, shortModelName } from '#lib/format';
 
 import { modelColorVar } from '../../-shared/model-badge';
 
-import { axisTickStyle, chartMargin, tooltipContentStyle } from './chart-style';
+import { axisTickStyle, chartMargin, legendWrapperStyle, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from './chart-style';
 
 const formatYAxis = (value: number): string => formatUsd(value);
 const formatTooltip = (value: unknown, name: unknown): [string, string] => [formatUsd(typeof value === 'number' ? value : 0), shortModelName(String(name))];
+const formatLegend = (value: unknown): ReactNode => <span className='text-muted-foreground'>{shortModelName(String(value))}</span>;
 
 /** Stacked estimated cost per day, one series per model. */
 export const ActivityChart = ({ byDay }: { byDay: DayRollup[] }) => {
@@ -43,7 +45,8 @@ export const ActivityChart = ({ byDay }: { byDay: DayRollup[] }) => {
           <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' vertical={false} />
           <XAxis dataKey='day' tick={axisTickStyle} tickLine={false} axisLine={false} />
           <YAxis tickFormatter={formatYAxis} tick={axisTickStyle} tickLine={false} axisLine={false} width={56} />
-          <Tooltip formatter={formatTooltip} contentStyle={tooltipContentStyle} />
+          <Tooltip formatter={formatTooltip} contentStyle={tooltipContentStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} />
+          <Legend formatter={formatLegend} iconType='circle' iconSize={8} wrapperStyle={legendWrapperStyle} />
           {models.map(model => (
             <Area
               key={model}

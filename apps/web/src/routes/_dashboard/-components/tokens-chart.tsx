@@ -1,16 +1,18 @@
 import type { DayRollup } from '@dotclaude/schemas/aggregate';
+import type { ReactNode } from 'react';
 
 import { useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { formatTokens, shortModelName } from '#lib/format';
 
 import { modelColorVar } from '../../-shared/model-badge';
 
-import { axisTickStyle, barCursorStyle, chartMargin, tooltipContentStyle } from './chart-style';
+import { axisTickStyle, barCursorStyle, chartMargin, legendWrapperStyle, tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from './chart-style';
 
 const formatYAxis = (value: number): string => formatTokens(value);
 const formatTooltip = (value: unknown, name: unknown): [string, string] => [formatTokens(typeof value === 'number' ? value : 0), shortModelName(String(name))];
+const formatLegend = (value: unknown): ReactNode => <span className='text-muted-foreground'>{shortModelName(String(value))}</span>;
 
 /** Stacked output tokens per day, one series per model. */
 export const TokensChart = ({ byDay }: { byDay: DayRollup[] }) => {
@@ -43,7 +45,14 @@ export const TokensChart = ({ byDay }: { byDay: DayRollup[] }) => {
           <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' vertical={false} />
           <XAxis dataKey='day' tick={axisTickStyle} tickLine={false} axisLine={false} />
           <YAxis tickFormatter={formatYAxis} tick={axisTickStyle} tickLine={false} axisLine={false} width={48} />
-          <Tooltip formatter={formatTooltip} contentStyle={tooltipContentStyle} cursor={barCursorStyle} />
+          <Tooltip
+            formatter={formatTooltip}
+            contentStyle={tooltipContentStyle}
+            itemStyle={tooltipItemStyle}
+            labelStyle={tooltipLabelStyle}
+            cursor={barCursorStyle}
+          />
+          <Legend formatter={formatLegend} iconType='circle' iconSize={8} wrapperStyle={legendWrapperStyle} />
           {models.map(model => (
             <Bar key={model} dataKey={model} stackId='tokens' fill={modelColorVar(model)} fillOpacity={0.8} name={model} />
           ))}
