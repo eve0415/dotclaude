@@ -419,5 +419,14 @@ export default defineConfig({
         'vitest/valid-expect': 'error',
       },
     },
+    // Streaming readers and the worker's per-file progress loop are inherently
+    // sequential — each chunk/file must finish before the next; Promise.all would
+    // change semantics (no backpressure, no incremental progress).
+    {
+      files: ['apps/web/src/lib/data/jsonl.ts', 'apps/web/src/lib/data/parse.worker.ts'],
+      rules: {
+        'no-await-in-loop': 'off',
+      },
+    },
   ],
 });

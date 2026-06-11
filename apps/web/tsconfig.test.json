@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "wicg-file-system-access"]
   },
   "include": ["src/**/*.test.ts", "src/**/*.test.tsx", "tests"]
 }

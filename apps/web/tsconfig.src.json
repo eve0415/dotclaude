@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"],
-    "types": ["vite/client"]
+    "types": ["vite/client", "wicg-file-system-access"]
   },
   "include": ["src", "worker-configuration.d.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
