@@ -2,7 +2,7 @@ import type { OpenedSource } from './picker';
 import type { ClaudeIndex } from './scan';
 import type { ReactNode } from 'react';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 import { openDemoSource } from './demo';
 import {
@@ -34,8 +34,15 @@ interface DataSourceValue {
 
 const DataSourceContext = createContext<DataSourceValue | undefined>(undefined);
 
+// Feature detection must not run during SSR/hydration render — the server has no
+// picker, so hydrate with `false` and let React re-render with the real value.
+const subscribeNever = (): (() => void) => () => {};
+const serverSnapshotFalse = (): boolean => false;
+const useDirectoryPickerSupported = (): boolean => useSyncExternalStore(subscribeNever, supportsDirectoryPicker, serverSnapshotFalse);
+
 export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
   const [source, setSource] = useState<OpenedSource | undefined>();
+  const directoryPickerSupported = useDirectoryPickerSupported();
   const [persistedHandle, setPersistedHandle] = useState<FileSystemDirectoryHandle | undefined>();
 
   useEffect(() => {
@@ -90,7 +97,7 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
       index,
       canRestore: persistedHandle !== undefined && source === undefined,
       restoreName: persistedHandle?.name,
-      directoryPickerSupported: supportsDirectoryPicker(),
+      directoryPickerSupported,
       openDirectory,
       openDirectoryFallback,
       openFiles,
@@ -100,7 +107,20 @@ export const DataSourceProvider = ({ children }: { children: ReactNode }) => {
       refresh,
       close,
     }),
-    [source, index, persistedHandle, openDirectory, openDirectoryFallback, openFiles, openDropped, openDemo, restoreLast, refresh, close],
+    [
+      source,
+      index,
+      persistedHandle,
+      directoryPickerSupported,
+      openDirectory,
+      openDirectoryFallback,
+      openFiles,
+      openDropped,
+      openDemo,
+      restoreLast,
+      refresh,
+      close,
+    ],
   );
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;
