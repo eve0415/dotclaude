@@ -22,4 +22,7 @@ export default defineConfig({
       presets: [reactCompilerPreset()],
     }),
   ],
+  build: {
+    minify: 'oxc',
+  },
 });
